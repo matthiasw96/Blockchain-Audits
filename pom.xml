@@ -18,6 +18,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.wavesplatform</groupId>
+                <artifactId>wavesj</artifactId>
+                <version>1.6.2</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.hrw</groupId>
