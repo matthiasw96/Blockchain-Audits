@@ -25,9 +25,15 @@
             <groupId>org.hrw</groupId>
             <artifactId>core</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.wavesplatform</groupId>
             <artifactId>wavesj</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
     </dependencies>
 </project>
