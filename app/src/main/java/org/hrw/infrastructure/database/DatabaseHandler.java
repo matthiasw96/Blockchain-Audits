@@ -2,18 +2,22 @@ package org.hrw.infrastructure.database;
 
 import org.hrw.datamodels.Datastructure;
 import org.hrw.datamodels.ServerData;
+import org.hrw.infrastructure.collector.Collector;
 import org.hrw.logging.Logger;
 
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class DatabaseHandler {
-    String hostAddress;
-    int port;
-    String databaseName;
-    String username;
-    String password;
-    Logger logger;
+    private final String hostAddress;
+    private final int port;
+    private final String databaseName;
+    private final String username;
+    private final String password;
+    private final Logger logger;
+    private final DateTimeFormatter FORMATTER;
 
     public DatabaseHandler(DatabaseHandlerBuilder builder) {
         this.hostAddress = builder.hostAddress;
@@ -22,6 +26,7 @@ public class DatabaseHandler {
         this.username = builder.username;
         this.password = builder.password;
         this.logger = builder.logger;
+        this.FORMATTER = builder.FORMATTER;
     }
 
     public List<ServerData> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
@@ -65,14 +70,14 @@ public class DatabaseHandler {
 
     public void writeToDatabase(List<Datastructure> data, UUID jobId, String tableName) throws SQLException {
         try {
-            System.out.println("Connecting to database...");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database...");
             Statement statement = this.createStatement();
             String query = this.createInsertQuery(data, tableName);
 
             statement.executeUpdate(query);
 
-            System.out.println("Data stored");
             logger.log(jobId, Logger.Stage.DB, Logger.Status.OK, "Persisted",null);
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data stored");
         } catch (Exception e) {
             logger.log(jobId, Logger.Stage.DB, Logger.Status.FAIL, "Error", Map.of("error", e.toString()));
             System.out.println("Connecting to database failed");
@@ -122,6 +127,7 @@ public class DatabaseHandler {
         String username;
         String password;
         Logger logger;
+        DateTimeFormatter FORMATTER;
 
         public DatabaseHandlerBuilder setHostAddress(String hostAddress) {
             this.hostAddress = hostAddress;
@@ -150,6 +156,11 @@ public class DatabaseHandler {
 
         public DatabaseHandlerBuilder setLogger(Logger logger) {
             this.logger = logger;
+            return this;
+        }
+
+        public DatabaseHandlerBuilder setFormatter(DateTimeFormatter FORMATTER) {
+            this.FORMATTER = FORMATTER;
             return this;
         }
 

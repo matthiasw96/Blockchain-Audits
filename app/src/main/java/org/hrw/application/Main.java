@@ -13,10 +13,15 @@ import org.hrw.datamodels.Mapper;
 import javax.swing.*;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 public class Main {
+    public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
+
     public static void main(String[] args) {
 
         SwingUtilities.invokeLater(() -> {
@@ -24,7 +29,7 @@ public class Main {
 
             ui.setOnStart(cfg -> new Thread(() -> {
                 String url = "jdbc:postgresql://" + cfg.hostDb() + ":" + cfg.portDb() + "/" + cfg.dbName();
-                System.out.println("Connecting to " + url);
+                System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to " + url);
                 try {
                     Logger logger = new Logger(() -> {
                         try { return DriverManager.getConnection(url, cfg.userDb(), cfg.passDb()); }
@@ -40,6 +45,7 @@ public class Main {
                             .setPassword(cfg.passDb())
                             .setDatabaseName(cfg.dbName())
                             .setLogger(logger)
+                            .setFormatter(FORMATTER)
                             .build();
 
                     Collector collector = new Collector.CollectorBuilder()
@@ -49,6 +55,7 @@ public class Main {
                             .setPeriod(cfg.timePeriodSeconds())
                             .setMap(map)
                             .setLogger(logger)
+                            .setFormatter(FORMATTER)
                             .build();
 
                     Hasher hasher = new Hasher.HasherBuilder()
@@ -61,6 +68,7 @@ public class Main {
                             .setPrivateKey(cfg.seedPhraseAnchor())
                             .setNode(selected.getNodeUri())
                             .setNetworkChainId(selected.getChainId())
+                            .setFormatter(FORMATTER)
                             .build();
 
                     Processor processor = new Processor.ProcessorBuilder()
@@ -69,6 +77,7 @@ public class Main {
                             .setHasher(hasher)
                             .setLogger(logger)
                             .setAnchorService(anchorService)
+                            .setFormatter(FORMATTER)
                             .build();
 
                     Scheduler scheduler = new Scheduler.SchedulerBuilder()
@@ -99,7 +108,7 @@ public class Main {
                 }
             }, "boot-thread").start());
 
-            ui.setOnStop(() -> System.out.println("Stop requested."));
+            ui.setOnStop(() -> System.out.println(LocalDateTime.now().format(FORMATTER) + ": Stop requested."));
 
             ui.setVisible(true);
         });

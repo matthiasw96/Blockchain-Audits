@@ -4,17 +4,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Mapper {
+    public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
     public static Map<String, String> createColumnMap() {
         try (InputStream in = Mapper.class.getResourceAsStream("/map.csv");
             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
 
             Map<String, String> map = readLines(reader);
 
-            System.out.println("Loaded " + map.size() + " entries");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Loaded " + map.size() + " entries");
 
             return map;
         } catch (IOException e) {

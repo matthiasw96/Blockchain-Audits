@@ -10,23 +10,27 @@ import java.security.NoSuchAlgorithmException;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Hasher {
-    String algorithm;
-    List<byte[]> secondHashes;
-    List<byte[]> minuteHashes;
+    private final String algorithm;
+    private List<byte[]> secondHashes;
+    private List<byte[]> minuteHashes;
+    private final DateTimeFormatter FORMATTER;
 
     public Hasher(HasherBuilder builder) {
         this.algorithm = builder.algorithm;
         this.secondHashes = new ArrayList<>();
         this.minuteHashes = new ArrayList<>();
+        this.FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
     }
 
     public List<Datastructure> hashData(List<Datastructure> data) throws SQLException {
         try {
             List<Datastructure> hashedData = new ArrayList<>();
-            System.out.println("Hashing data");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data");
 
             for(Datastructure ds : data) {
                 ServerData entry = (ServerData) ds;
@@ -45,7 +49,7 @@ public class Hasher {
                 }
             }
 
-            System.out.println("Hashing data completed");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data completed");
 
             return hashedData;
         } catch (Exception e) {

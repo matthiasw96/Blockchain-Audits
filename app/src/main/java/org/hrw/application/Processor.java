@@ -13,12 +13,14 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+
 public class Processor extends TimerTask {
-    Collector collector;
-    AnchorService anchorService;
-    DatabaseHandler dbHandler;
-    Hasher hasher;
-    Logger logger;
+    private final Collector collector;
+    private final AnchorService anchorService;
+    private final DatabaseHandler dbHandler;
+    private final Hasher hasher;
+    private final Logger logger;
+    private final DateTimeFormatter FORMATTER;
 
     public Processor(ProcessorBuilder builder) {
         this.collector = builder.collector;
@@ -26,6 +28,7 @@ public class Processor extends TimerTask {
         this.dbHandler = builder.dbHandler;
         this.logger = builder.logger;
         this.hasher = builder.hasher;
+        this.FORMATTER = builder.FORMATTER;
     }
 
     public void run() {
@@ -39,7 +42,7 @@ public class Processor extends TimerTask {
             ));
 
             try {
-                System.out.println("Starting process...");
+                System.out.println(LocalDateTime.now().format(FORMATTER) + ": Starting process...");
                 List<Datastructure> serverData = this.collector.fetch(jobId);
 
                 List<Datastructure> hashedData = this.hasher.hashData(serverData);
@@ -49,12 +52,14 @@ public class Processor extends TimerTask {
 
                 this.anchorData(hashedData);
 
-                System.out.println("Finished processing.\n\n");
+                logger.log(jobId, Logger.Stage.PROCESS, Logger.Status.OK, "Process Completed", null);
+
+                System.out.println(LocalDateTime.now().format(FORMATTER) + ": Finished processing.\n\n");
                 System.out.println("--------------------------------------------------");
             } catch (Exception e) {
                 try {
                     e.printStackTrace();
-                    System.out.println("Process failed");
+                    System.out.println(LocalDateTime.now().format(FORMATTER) + ": Process failed");
                     logger.endJob(jobId, false, "Job failed", Map.of("error", e.getMessage()));
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -82,6 +87,7 @@ public class Processor extends TimerTask {
         DatabaseHandler dbHandler;
         Logger logger;
         Hasher hasher;
+        DateTimeFormatter FORMATTER;
 
         public ProcessorBuilder setCollector(Collector collector) {
             this.collector = collector;
@@ -105,6 +111,11 @@ public class Processor extends TimerTask {
 
         public ProcessorBuilder setHasher(Hasher hasher) {
             this.hasher = hasher;
+            return this;
+        }
+
+        public ProcessorBuilder setFormatter(DateTimeFormatter FORMATTER) {
+            this.FORMATTER = FORMATTER;
             return this;
         }
 

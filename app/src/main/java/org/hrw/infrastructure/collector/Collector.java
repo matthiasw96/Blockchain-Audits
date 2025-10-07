@@ -22,16 +22,19 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Collector {
-    HttpClient client;
-    String uri;
-    String user;
-    String pass;
-    int period;
-    Map<String, String> map;
-    Logger logger;
+    private final HttpClient client;
+    private final String uri;
+    private final String user;
+    private final String pass;
+    private final int period;
+    private final Map<String, String> map;
+    private final Logger logger;
+    private final DateTimeFormatter FORMATTER;
 
     public Collector(CollectorBuilder builder) {
         this.uri = builder.uri;
@@ -41,13 +44,13 @@ public class Collector {
         this.map = builder.map;
         this.client = HttpClient.newHttpClient();
         this.logger = builder.logger;
+        this.FORMATTER = builder.FORMATTER;
     }
 
-    public List<Datastructure> fetch(UUID jobId) throws ParserConfigurationException, IOException, SAXException, XPathExpressionException, InterruptedException, SQLException {
+    public List<Datastructure> fetch(UUID jobId) throws SQLException {
         try {
-            System.out.println("Fetching server data...");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Fetching server data...");
             String rawData = this.getServerData();
-            System.out.println("Data received");
 
             Document xmlDoc = this.buildXmlDoc(rawData);
             List<Datastructure> serverData = this.createDatastructure(xmlDoc, jobId);
@@ -56,11 +59,12 @@ public class Collector {
                     "rows", serverData.size()-1
             ));
 
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data received");
             return serverData;
         } catch (Exception e) {
             logger.log(jobId, Logger.Stage.SERVER, Logger.Status.FAIL, "Error", Map.of("error", e.toString()));
             e.printStackTrace();
-            System.out.println("Fetching server data failed");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Fetching server data failed");
         }
         return new LinkedList<>();
     }
@@ -136,6 +140,7 @@ public class Collector {
         int period;
         Map<String, String> map;
         Logger logger;
+        DateTimeFormatter FORMATTER;
 
         public CollectorBuilder setUri(String uri) {
             this.uri = uri;
@@ -164,6 +169,11 @@ public class Collector {
 
         public CollectorBuilder setLogger(Logger logger) {
             this.logger = logger;
+            return this;
+        }
+
+        public CollectorBuilder setFormatter(DateTimeFormatter FORMATTER) {
+            this.FORMATTER = FORMATTER;
             return this;
         }
 

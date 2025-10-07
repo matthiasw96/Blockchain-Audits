@@ -7,7 +7,8 @@ import java.net.URISyntaxException;
 
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Arrays;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -22,10 +23,11 @@ import org.hrw.datamodels.HashData;
 import org.hrw.logging.Logger;
 
 public class AnchorService {
-    Logger logger;
-    PrivateKey privateKey;
-    byte networkChainId;
-    Node node;
+    private final Logger logger;
+    private final PrivateKey privateKey;
+    private final byte networkChainId;
+    private final Node node;
+    private final DateTimeFormatter FORMATTER;
 
 
     public AnchorService(AnchorServiceBuilder builder) {
@@ -33,6 +35,7 @@ public class AnchorService {
         this.privateKey = builder.privateKey;
         this.networkChainId = builder.networkChainId;
         this.node = builder.node;
+        this.FORMATTER = builder.FORMATTER;
     }
 
     private DataTransaction createTransaction(DataEntry entry) {
@@ -54,7 +57,7 @@ public class AnchorService {
 
     public void anchorHashTree(HashData rootHash) throws SQLException {
         try{
-            System.out.println("Anchoring Data");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring Data");
             String timestamp = rootHash.getTimestamp();
             String hourHash = rootHash.getHourHash();
 
@@ -67,11 +70,11 @@ public class AnchorService {
                     "transaction", transaction.toJson()
             ));
 
-            System.out.println("Data Anchored");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data Anchored");
         } catch(Exception e) {
             logger.log(UUID.fromString(rootHash.getJobId()), Logger.Stage.ANCHOR, Logger.Status.FAIL, "Error", Map.of("error", e.toString()));
             e.printStackTrace();
-            System.out.println("Anchoring data failed");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring data failed");
         }
     }
 
@@ -80,6 +83,7 @@ public class AnchorService {
         PrivateKey privateKey;
         byte networkChainId;
         Node node;
+        DateTimeFormatter FORMATTER;
 
         public AnchorServiceBuilder setLogger(Logger logger) {
             this.logger = logger;
@@ -98,6 +102,11 @@ public class AnchorService {
 
         public AnchorServiceBuilder setNode(String url) throws NodeException, URISyntaxException, IOException {
             this.node = new Node(url);
+            return this;
+        }
+
+        public AnchorServiceBuilder setFormatter(DateTimeFormatter FORMATTER) {
+            this.FORMATTER = FORMATTER;
             return this;
         }
 
