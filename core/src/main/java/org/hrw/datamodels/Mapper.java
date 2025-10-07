@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class Mapper {
     public static Map<String, String> createColumnMap() {
-        try (InputStream in = Mapper.class.getResourceAsStream("map.csv");
+        try (InputStream in = Mapper.class.getResourceAsStream("/map.csv");
             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
 
             Map<String, String> map = readLines(reader);

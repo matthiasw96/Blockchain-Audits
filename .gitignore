@@ -31,6 +31,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+core/src/main/resources/map.csv
+
+
 ### VS Code ###
 .vscode/
 
