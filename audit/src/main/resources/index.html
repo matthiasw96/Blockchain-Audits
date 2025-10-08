@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Audit</title>
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+
+<header class="site-header">
+    <div class="container">
+        <h1 class="site-title">Audit Dashboard</h1>
+    </div>
+</header>
+
+<main id="content" class="container">
+    <section class="card">
+        <h2>Range</h2>
+
+        <form id="rangeForm" class="grid">
+            <fieldset class="field">
+                <legend>Start</legend>
+                <label>
+                    <span class="lbl">Date</span>
+                    <input id="startDate" type="date" required />
+                </label>
+                <label>
+                    <span class="lbl">Time</span>
+                    <input id="startTime" type="time" required step="60" />
+                </label>
+            </fieldset>
+
+            <fieldset class="field">
+                <legend>End</legend>
+                <label>
+                    <span class="lbl">Date</span>
+                    <input id="endDate" type="date" required />
+                </label>
+                <label>
+                    <span class="lbl">Time</span>
+                    <input id="endTime" type="time" required step="60" />
+                </label>
+            </fieldset>
+
+            <div class="actions">
+                <button type="submit" class="btn primary">Apply</button>
+            </div>
+        </form>
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <small>&copy; <span id="year"></span> Your Company</small>
+    </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

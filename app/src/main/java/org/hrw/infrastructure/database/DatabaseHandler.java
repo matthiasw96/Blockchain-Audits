@@ -1,9 +1,8 @@
 package org.hrw.infrastructure.database;
 
 import org.hrw.datamodels.Datastructure;
+import org.hrw.datamodels.Mapper;
 import org.hrw.datamodels.ServerData;
-import org.hrw.infrastructure.collector.Collector;
-import org.hrw.logging.Logger;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -16,7 +15,7 @@ public class DatabaseHandler {
     private final String databaseName;
     private final String username;
     private final String password;
-    private final Logger logger;
+    private final Mapper mapper;
     private final DateTimeFormatter FORMATTER;
 
     public DatabaseHandler(DatabaseHandlerBuilder builder) {
@@ -25,8 +24,8 @@ public class DatabaseHandler {
         this.databaseName = builder.databaseName;
         this.username = builder.username;
         this.password = builder.password;
-        this.logger = builder.logger;
         this.FORMATTER = builder.FORMATTER;
+        this.mapper = new Mapper();
     }
 
     public List<ServerData> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
@@ -34,41 +33,10 @@ public class DatabaseHandler {
         Statement statement = this.createStatement();
         String query = this.createSelectQuery(startPoint, endPoint, tableName);
         ResultSet resultSet = statement.executeQuery(query);
-        return this.createServerData(resultSet);
+        return this.mapper.resultSetToServerData(resultSet);
     }
 
-    private List<ServerData> createServerData(ResultSet resultSet) throws SQLException {
-        List<ServerData> serverData = new ArrayList<>();
-        List<String> columnNames = this.getColumnNames(resultSet);
-
-        while (resultSet.next()) {
-            Map<String,String> map = this.createMap(columnNames, resultSet);
-            serverData.add(new ServerData(map));
-        }
-        return serverData;
-    }
-
-    private Map<String, String> createMap(List<String> columnNames, ResultSet resultSet) throws SQLException {
-        Map<String, String> map = new HashMap<>();
-
-        for(String columnName : columnNames) {
-            map.put(columnName, resultSet.getString(columnName));
-        }
-
-        return map;
-    }
-
-    private List<String> getColumnNames(ResultSet resultSet) throws SQLException {
-        List<String> columnNames = new ArrayList<>();
-
-        for(int i=1; i<resultSet.getMetaData().getColumnCount(); i++) {
-            columnNames.add(resultSet.getMetaData().getColumnName(i));
-        }
-
-        return columnNames;
-    }
-
-    public void writeToDatabase(List<Datastructure> data, UUID jobId, String tableName) throws SQLException {
+    public void writeToDatabase(List<? extends Datastructure> data, String tableName) throws SQLException {
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database...");
             Statement statement = this.createStatement();
@@ -76,10 +44,8 @@ public class DatabaseHandler {
 
             statement.executeUpdate(query);
 
-            logger.log(jobId, Logger.Stage.DB, Logger.Status.OK, "Persisted",null);
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data stored");
         } catch (Exception e) {
-            logger.log(jobId, Logger.Stage.DB, Logger.Status.FAIL, "Error", Map.of("error", e.toString()));
             System.out.println("Connecting to database failed");
             throw e;
         }
@@ -91,22 +57,22 @@ public class DatabaseHandler {
         return connection.createStatement();
     }
 
-    private String createInsertQuery(List<Datastructure> data, String tableName) {
-        String column_names = data.getFirst().getAttributeNames();
-        String values ="";
+    private String createInsertQuery(List<? extends Datastructure> data, String tableName) {
+        String columnNames = data.getFirst().getAttributeNames();
+        String values = "";
 
         for(int i=0;i<data.size();i++) {
             if(i == data.size()-1) {
-                values+="('" + data.get(i).getJobId() + "'," + data.get(i).toString() + ")\n";
+                values += "('" + data.get(i).toString() + ")\n";
             } else {
-                values+="('" + data.get(i).getJobId() + "'," + data.get(i).toString() + "),\n";
+                values += "('" + data.get(i).toString() + "),\n";
             }
         }
 
         return """
                 INSERT INTO\s""" + tableName + """
                  (
-                """ + column_names + """
+                """ + columnNames + """
                 \n) \nVALUES
                 """ + values + """
                 ON CONFLICT ("timestamp") DO NOTHING;""";
@@ -126,7 +92,6 @@ public class DatabaseHandler {
         String databaseName;
         String username;
         String password;
-        Logger logger;
         DateTimeFormatter FORMATTER;
 
         public DatabaseHandlerBuilder setHostAddress(String hostAddress) {
@@ -151,11 +116,6 @@ public class DatabaseHandler {
 
         public DatabaseHandlerBuilder setPassword(String password) {
             this.password = password;
-            return this;
-        }
-
-        public DatabaseHandlerBuilder setLogger(Logger logger) {
-            this.logger = logger;
             return this;
         }
 

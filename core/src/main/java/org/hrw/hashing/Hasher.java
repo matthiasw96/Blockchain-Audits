@@ -1,7 +1,5 @@
 package org.hrw.hashing;
 
-
-import org.hrw.datamodels.Datastructure;
 import org.hrw.datamodels.HashData;
 import org.hrw.datamodels.ServerData;
 
@@ -9,7 +7,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -27,13 +24,12 @@ public class Hasher {
         this.FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
     }
 
-    public List<Datastructure> hashData(List<Datastructure> data) throws SQLException {
+    public List<HashData> hashData(List<ServerData> data) {
         try {
-            List<Datastructure> hashedData = new ArrayList<>();
+            List<HashData> hashedData = new ArrayList<>();
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data");
 
-            for(Datastructure ds : data) {
-                ServerData entry = (ServerData) ds;
+            for(ServerData entry : data) {
                 long timestamp = Long.parseLong(entry.getTimestamp());
 
                 byte[] unpackedData = entry.toString().getBytes(StandardCharsets.UTF_8);

@@ -6,21 +6,15 @@ import org.hrw.infrastructure.anchor.AnchorService;
 import org.hrw.infrastructure.collector.Collector;
 import org.hrw.infrastructure.database.DatabaseAPI;
 import org.hrw.infrastructure.database.DatabaseHandler;
-import org.hrw.logging.Logger;
 import org.hrw.userInterface.UserInterface;
-import org.hrw.datamodels.Mapper;
 
 import javax.swing.*;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
 public class Main {
     public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
-
 
     public static void main(String[] args) {
 
@@ -31,20 +25,12 @@ public class Main {
                 String url = "jdbc:postgresql://" + cfg.hostDb() + ":" + cfg.portDb() + "/" + cfg.dbName();
                 System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to " + url);
                 try {
-                    Logger logger = new Logger(() -> {
-                        try { return DriverManager.getConnection(url, cfg.userDb(), cfg.passDb()); }
-                        catch (SQLException e) { throw new RuntimeException(e); }
-                    });
-
-                    Map<String, String> map = Mapper.createColumnMap();
-
                     DatabaseHandler dbHandler = new DatabaseHandler.DatabaseHandlerBuilder()
                             .setHostAddress(cfg.hostDb())
                             .setPort(cfg.portDb())
                             .setUsername(cfg.userDb())
                             .setPassword(cfg.passDb())
                             .setDatabaseName(cfg.dbName())
-                            .setLogger(logger)
                             .setFormatter(FORMATTER)
                             .build();
 
@@ -53,8 +39,6 @@ public class Main {
                             .setUser(cfg.userServer())
                             .setPass(cfg.passServer())
                             .setPeriod(cfg.timePeriodSeconds())
-                            .setMap(map)
-                            .setLogger(logger)
                             .setFormatter(FORMATTER)
                             .build();
 
@@ -64,7 +48,6 @@ public class Main {
 
                     Network selected = Network.parse(cfg.environmentAnchor());
                     AnchorService anchorService = new AnchorService.AnchorServiceBuilder()
-                            .setLogger(logger)
                             .setPrivateKey(cfg.seedPhraseAnchor())
                             .setNode(selected.getNodeUri())
                             .setNetworkChainId(selected.getChainId())
@@ -75,7 +58,6 @@ public class Main {
                             .setDbHandler(dbHandler)
                             .setCollector(collector)
                             .setHasher(hasher)
-                            .setLogger(logger)
                             .setAnchorService(anchorService)
                             .setFormatter(FORMATTER)
                             .build();

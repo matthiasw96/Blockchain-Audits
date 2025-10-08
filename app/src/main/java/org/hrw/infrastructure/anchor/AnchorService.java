@@ -10,20 +10,16 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
+import java.util.List;
 
 import com.wavesplatform.transactions.DataTransaction;
 import com.wavesplatform.transactions.data.StringEntry;
 import com.wavesplatform.transactions.data.DataEntry;
 import com.wavesplatform.transactions.account.PrivateKey;
-import com.wavesplatform.transactions.account.Address;
 import com.wavesplatform.wavesj.Node;
 import org.hrw.datamodels.HashData;
-import org.hrw.logging.Logger;
 
 public class AnchorService {
-    private final Logger logger;
     private final PrivateKey privateKey;
     private final byte networkChainId;
     private final Node node;
@@ -31,7 +27,6 @@ public class AnchorService {
 
 
     public AnchorService(AnchorServiceBuilder builder) {
-        this.logger = builder.logger;
         this.privateKey = builder.privateKey;
         this.networkChainId = builder.networkChainId;
         this.node = builder.node;
@@ -55,9 +50,20 @@ public class AnchorService {
         this.node.broadcast(tx);
     }
 
-    public void anchorHashTree(HashData rootHash) throws SQLException {
+    public void anchorData(List<HashData> hashedData) throws SQLException {
+        for(HashData hashEntry : hashedData) {
+            long timestamp = Long.parseLong(hashEntry.getTimestamp());
+
+            if(timestamp % 3600 == 0) {
+                this.anchorHashTree(hashEntry);
+            }
+        }
+    }
+
+    private void anchorHashTree(HashData rootHash) throws SQLException {
         try{
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring Data");
+
             String timestamp = rootHash.getTimestamp();
             String hourHash = rootHash.getHourHash();
 
@@ -65,30 +71,18 @@ public class AnchorService {
             DataTransaction transaction = this.createTransaction(entry);
             this.broadcastEntry(transaction);
 
-            logger.log(UUID.fromString(rootHash.getJobId()), Logger.Stage.ANCHOR, Logger.Status.OK, "Data Anchored", Map.of(
-                    "address", Address.from(networkChainId, privateKey.publicKey()).toString(),
-                    "transaction", transaction.toJson()
-            ));
-
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data Anchored");
         } catch(Exception e) {
-            logger.log(UUID.fromString(rootHash.getJobId()), Logger.Stage.ANCHOR, Logger.Status.FAIL, "Error", Map.of("error", e.toString()));
             e.printStackTrace();
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring data failed");
         }
     }
 
     public static class AnchorServiceBuilder {
-        Logger logger;
         PrivateKey privateKey;
         byte networkChainId;
         Node node;
         DateTimeFormatter FORMATTER;
-
-        public AnchorServiceBuilder setLogger(Logger logger) {
-            this.logger = logger;
-            return this;
-        }
 
         public AnchorServiceBuilder setPrivateKey(String seedPhrase) {
             this.privateKey = PrivateKey.fromSeed(seedPhrase);

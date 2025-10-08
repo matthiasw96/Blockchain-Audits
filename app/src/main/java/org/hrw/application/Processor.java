@@ -1,14 +1,12 @@
 package org.hrw.application;
 
-import org.hrw.datamodels.Datastructure;
 import org.hrw.datamodels.HashData;
+import org.hrw.datamodels.ServerData;
 import org.hrw.hashing.Hasher;
 import org.hrw.infrastructure.anchor.AnchorService;
 import org.hrw.infrastructure.collector.Collector;
 import org.hrw.infrastructure.database.DatabaseHandler;
-import org.hrw.logging.Logger;
 
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -19,65 +17,33 @@ public class Processor extends TimerTask {
     private final AnchorService anchorService;
     private final DatabaseHandler dbHandler;
     private final Hasher hasher;
-    private final Logger logger;
     private final DateTimeFormatter FORMATTER;
 
     public Processor(ProcessorBuilder builder) {
         this.collector = builder.collector;
         this.anchorService = builder.anchorService;
         this.dbHandler = builder.dbHandler;
-        this.logger = builder.logger;
         this.hasher = builder.hasher;
         this.FORMATTER = builder.FORMATTER;
     }
 
     public void run() {
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String timePeriod = now.format(fmt);
-
         try {
-            UUID jobId = logger.startJob("Scheduled run", Map.of(
-                    "periodSec", timePeriod
-            ));
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Starting process...");
 
-            try {
-                System.out.println(LocalDateTime.now().format(FORMATTER) + ": Starting process...");
-                List<Datastructure> serverData = this.collector.fetch(jobId);
+            List<ServerData> serverData = this.collector.fetch();
+            List<HashData> hashedData = this.hasher.hashData(serverData);
 
-                List<Datastructure> hashedData = this.hasher.hashData(serverData);
+            dbHandler.writeToDatabase(serverData, "test_serverdata");
+            dbHandler.writeToDatabase(hashedData, "test_hashtable");
 
-                dbHandler.writeToDatabase(serverData, jobId, "test_serverdata");
-                dbHandler.writeToDatabase(hashedData, jobId, "test_hashtable");
+            this.anchorService.anchorData(hashedData);
 
-                this.anchorData(hashedData);
-
-                logger.log(jobId, Logger.Stage.PROCESS, Logger.Status.OK, "Process Completed", null);
-
-                System.out.println(LocalDateTime.now().format(FORMATTER) + ": Finished processing.\n\n");
-                System.out.println("--------------------------------------------------");
-            } catch (Exception e) {
-                try {
-                    e.printStackTrace();
-                    System.out.println(LocalDateTime.now().format(FORMATTER) + ": Process failed");
-                    logger.endJob(jobId, false, "Job failed", Map.of("error", e.getMessage()));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        } catch (SQLException e) {
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Finished processing.\n\n");
+            System.out.println("--------------------------------------------------");
+        } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private void anchorData(List<Datastructure> hashedData) throws SQLException {
-        for(Datastructure data : hashedData) {
-            HashData hashEntry = (HashData) data;
-            long timestamp = Long.parseLong(hashEntry.getTimestamp());
-
-            if(timestamp % 60 == 0) {
-                anchorService.anchorHashTree(hashEntry);
-            }
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Process failed");
         }
     }
 
@@ -85,7 +51,6 @@ public class Processor extends TimerTask {
         Collector collector;
         AnchorService anchorService;
         DatabaseHandler dbHandler;
-        Logger logger;
         Hasher hasher;
         DateTimeFormatter FORMATTER;
 
@@ -101,11 +66,6 @@ public class Processor extends TimerTask {
 
         public ProcessorBuilder setDbHandler(DatabaseHandler dbHandler) {
             this.dbHandler = dbHandler;
-            return this;
-        }
-
-        public ProcessorBuilder setLogger(Logger logger) {
-            this.logger = logger;
             return this;
         }
 
