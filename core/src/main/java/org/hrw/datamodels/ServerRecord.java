@@ -27,15 +27,15 @@ public record ServerRecord(
                 "vm2_net_rx_total," +
                 "vm2_net_tx_total," +
                 "vm2_disk_iops_total," +
-                "vm2_disk_iops_avg," +
-                "vm2_disk_latency_avg" +
+                "vm2_disk_throughput_total," +
+                "vm2_disk_latency_avg," +
                 "vm3_cpu_avg," +
                 "vm3_cpu_max," +
                 "vm3_memory," +
                 "vm3_net_rx_total," +
                 "vm3_net_tx_total," +
                 "vm3_disk_iops_total," +
-                "vm3_disk_iops_avg," +
+                "vm3_disk_throughput_total," +
                 "vm3_disk_latency_avg";
     }
 

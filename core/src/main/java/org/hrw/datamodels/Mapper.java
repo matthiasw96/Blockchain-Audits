@@ -113,94 +113,94 @@ public class Mapper {
 
             // VM2
             List<Double> vm2_cpu = List.of(
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu0")).getTextContent()),
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu1")).getTextContent()),
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu2")).getTextContent()),
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu3")).getTextContent())
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu0")+1).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu1")+1).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu2")+1).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu3")+1).getTextContent())
             );
 
             double vm2_cpu_avg = vm2_cpu.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
             double vm2_cpu_max = vm2_cpu.stream().mapToDouble(Double::doubleValue).max().orElse(Double.NaN);
 
-            double vm2_memory = Double.parseDouble(row.item(legendList.indexOf("vm2_memory")).getTextContent());
+            double vm2_memory = Double.parseDouble(row.item(legendList.indexOf("vm2_memory")+1).getTextContent());
 
-            double vm2_net_rx_total = Double.parseDouble(row.item(legendList.indexOf("vm2_vif_1_rx")).getTextContent());
-            double vm2_net_tx_total = Double.parseDouble(row.item(legendList.indexOf("vm2_vif_1_tx")).getTextContent());
+            double vm2_net_rx_total = Double.parseDouble(row.item(legendList.indexOf("vm2_vif_1_rx")+1).getTextContent());
+            double vm2_net_tx_total = Double.parseDouble(row.item(legendList.indexOf("vm2_vif_1_tx")+1).getTextContent());
 
             List<Double> vm2_disk_iops = List.of(
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_iops_total")).getTextContent()),
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_iops_total")).getTextContent())
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_iops_total")+1).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_iops_total")+1).getTextContent())
             );
 
             double vm2_disk_iops_total = vm2_disk_iops.stream().mapToDouble(Double::doubleValue).sum();
 
             List<Double> vm2_disk_throughput = List.of(
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_io_throughput_total")).getTextContent()),
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_io_throughput_total")).getTextContent())
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_io_throughput_total")+1).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_io_throughput_total")+1).getTextContent())
             );
 
             double vm2_disk_throughput_total = vm2_disk_throughput.stream().mapToDouble(Double::doubleValue).sum();
 
             List<Double> vm2_disk_latency = List.of(
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_latency")).getTextContent()),
-                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_latency")).getTextContent())
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_latency")+1).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_latency")+1).getTextContent())
             );
 
             double vm2_disk_latency_avg = vm2_disk_latency.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
 
         //VM3
         List<Double> vm3_cpu = List.of(
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu0")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu1")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu2")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu3")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu4")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu5")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu6")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu7")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu8")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu9")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu10")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu11")).getTextContent())
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu0")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu1")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu2")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu3")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu4")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu5")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu6")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu7")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu8")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu9")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu10")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu11")+1).getTextContent())
         );
 
         double vm3_cpu_avg = vm3_cpu.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
         double vm3_cpu_max = vm3_cpu.stream().mapToDouble(Double::doubleValue).max().orElse(Double.NaN);
 
-        double vm3_memory = Double.parseDouble(row.item(legendList.indexOf("vm3_memory")).getTextContent());
+        double vm3_memory = Double.parseDouble(row.item(legendList.indexOf("vm3_memory")+1).getTextContent());
 
-        double vm3_net_rx_total = Double.parseDouble(row.item(legendList.indexOf("vm3_vif_0_rx")).getTextContent());
-        double vm3_net_tx_total = Double.parseDouble(row.item(legendList.indexOf("vm3_vif_0_tx")).getTextContent());
+        double vm3_net_rx_total = Double.parseDouble(row.item(legendList.indexOf("vm3_vif_0_rx")+1).getTextContent());
+        double vm3_net_tx_total = Double.parseDouble(row.item(legendList.indexOf("vm3_vif_0_tx")+1).getTextContent());
 
         List<Double> vm3_disk_iops = List.of(
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_iops_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_iops_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_iops_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_iops_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_iops_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_iops_total")).getTextContent())
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_iops_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_iops_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_iops_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_iops_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_iops_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_iops_total")+1).getTextContent())
         );
 
         double vm3_disk_iops_total = vm3_disk_iops.stream().mapToDouble(Double::doubleValue).sum();
 
         List<Double> vm3_disk_throughput = List.of(
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_io_throughput_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_io_throughput_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_io_throughput_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_io_throughput_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_io_throughput_total")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_io_throughput_total")).getTextContent())
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_io_throughput_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_io_throughput_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_io_throughput_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_io_throughput_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_io_throughput_total")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_io_throughput_total")+1).getTextContent())
         );
 
         double vm3_disk_throughput_total = vm3_disk_throughput.stream().mapToDouble(Double::doubleValue).sum();
 
         List<Double> vm3_disk_latency = List.of(
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_latency")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_latency")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_latency")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_latency")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_latency")).getTextContent()),
-                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_latency")).getTextContent())
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_latency")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_latency")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_latency")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_latency")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_latency")+1).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_latency")+1).getTextContent())
         );
 
         double vm3_disk_latency_avg = vm3_disk_latency.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);

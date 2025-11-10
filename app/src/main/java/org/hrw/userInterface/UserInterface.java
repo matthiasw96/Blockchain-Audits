@@ -26,7 +26,6 @@ public class UserInterface extends JFrame {
     private final JTextField userDb = new JTextField("postgres");
     private final JPasswordField passDb = new JPasswordField();
     private final JTextField dbName = new JTextField("postgres");
-    private final JTextField dbTable = new JTextField("test_serverdata");
 
     // Hasher
     private final JTextField hasherAlgorithm = new JTextField("SHA-256");
@@ -74,7 +73,6 @@ public class UserInterface extends JFrame {
         row = addRow(content, g, row, "userDb", userDb);
         row = addRow(content, g, row, "passDb", passDb);
         row = addRow(content, g, row, "dbName", dbName);
-        row = addRow(content, g, row, "dbTable", dbTable);
 
         row = sectionLabel(content, g, row, "Hasher");
         row = addRow(content, g, row, "hasherAlgorithm", hasherAlgorithm);
@@ -156,7 +154,6 @@ public class UserInterface extends JFrame {
         String uDb = reqText(userDb, "userDb");
         String pDbPass = new String(passDb.getPassword());
         String nameDb = reqText(dbName, "dbName");
-        String tblDb = reqText(dbTable, "dbTable");
 
         String algorithm = reqText(hasherAlgorithm, "hasherAlgorithm");
 
@@ -167,7 +164,7 @@ public class UserInterface extends JFrame {
         Date first = (Date) dateOfFirstExecution.getValue();
 
         if (period <= 0) throw new IllegalArgumentException("timePeriod must be > 0 seconds");
-        return new Config(hostSrv, userSrv, passSrv, hDb, pDb, uDb, pDbPass, nameDb, tblDb, seedPhrase, environment, algorithm,
+        return new Config(hostSrv, userSrv, passSrv, hDb, pDb, uDb, pDbPass, nameDb, seedPhrase, environment, algorithm,
                 period, first);
     }
 
@@ -228,7 +225,7 @@ public class UserInterface extends JFrame {
     // Simple container for the collected config
     public record Config(
             String hostServer, String userServer, String passServer,
-            String hostDb, int portDb, String userDb, String passDb, String dbName, String dbTable, String seedPhraseAnchor, String environmentAnchor, String hasherAlgorithm,
+            String hostDb, int portDb, String userDb, String passDb, String dbName, String seedPhraseAnchor, String environmentAnchor, String hasherAlgorithm,
             int timePeriodSeconds, Date dateOfFirstExecution
     ) {}
 
@@ -249,7 +246,7 @@ public class UserInterface extends JFrame {
         return new Config(
                 hostServer.getText(), userServer.getText(), new String(passServer.getPassword()),
                 hostDb.getText(), ((Number) portDb.getValue()).intValue(), userDb.getText(),
-                new String(passDb.getPassword()), dbName.getText(), dbTable.getText(),seedPhraseAnchor.getText(),
+                new String(passDb.getPassword()), dbName.getText(), seedPhraseAnchor.getText(),
                 environmentAnchor.getSelectedItem().toString(), hasherAlgorithm.getText(), ((Number) timePeriod.getValue()).intValue(),
                 (Date) dateOfFirstExecution.getValue()
         );

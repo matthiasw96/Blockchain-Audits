@@ -34,8 +34,8 @@ public class Processor extends TimerTask {
             List<ServerRecord> serverData = this.collector.fetch();
             List<HashRecord> hashedData = this.hasher.hashData(serverData);
 
-            dbHandler.writeToDatabase(serverData, "test_serverdata");
-            dbHandler.writeToDatabase(hashedData, "test_hashtable");
+            dbHandler.writeToDatabase(serverData, "serverdata");
+            dbHandler.writeToDatabase(hashedData, "hashdata");
 
             this.anchorService.anchorData(hashedData);
 
