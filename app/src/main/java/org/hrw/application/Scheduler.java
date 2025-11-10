@@ -9,10 +9,10 @@ public class Scheduler {
     TimerTask timerTask;
     int timePeriod;
 
-    public Scheduler(SchedulerBuilder builder) {
+    public Scheduler(TimerTask timerTask, int timePeriod) {
         timer = new Timer();
-        this.timerTask = builder.timerTask;
-        this.timePeriod = builder.timePeriod;
+        this.timerTask = timerTask;
+        this.timePeriod = timePeriod;
     }
 
     public void executeTimer(Date firstExecution) {
@@ -21,25 +21,6 @@ public class Scheduler {
 
     public void stop(){
         timer.cancel();
-    }
-
-    public static class SchedulerBuilder {
-        TimerTask timerTask;
-        int timePeriod;
-
-        public SchedulerBuilder setTimerTask(TimerTask timerTask) {
-            this.timerTask = timerTask;
-            return this;
-        }
-
-        public SchedulerBuilder setTimePeriod(int timePeriod) {
-            this.timePeriod = timePeriod;
-            return this;
-        }
-
-        public Scheduler build() {
-            return new Scheduler(this);
-        }
     }
 }
 

@@ -1,7 +1,7 @@
 package org.hrw.backend.datacollector;
 
 import org.hrw.datamodels.Mapper;
-import org.hrw.datamodels.ServerData;
+import org.hrw.datamodels.ServerRecord;
 
 import java.io.IOException;
 import java.net.URI;
@@ -17,18 +17,17 @@ public class DataCollector {
     private final int port;
     private final Mapper mapper;
 
-    public DataCollector(DataCollectorBuilder builder) {
-        this.client = builder.client;
-        this.uri = builder.uri;
-        this.port = builder.port;
+    public DataCollector(String uri, int port) {
+        this.client = HttpClient.newHttpClient();
+        this.uri = uri;
+        this.port = port;
         this.mapper = new Mapper();
     }
 
-    public List<ServerData> getServerData(LocalDateTime start, LocalDateTime end) throws IOException, InterruptedException {
+    public List<ServerRecord> getServerData(LocalDateTime start, LocalDateTime end) throws IOException, InterruptedException {
         System.out.println("Retrieving server data...");
         String rawBody = this.callDatabase(start, end);
-        System.out.println(rawBody);
-        return this.mapper.jsonToServerData(rawBody);
+        return this.mapper.jsonToServerRecord(rawBody);
     }
 
     private String callDatabase(LocalDateTime start, LocalDateTime end) throws IOException, InterruptedException {
@@ -46,30 +45,5 @@ public class DataCollector {
                 .uri(URI.create(url))
                 .GET()
                 .build();
-    }
-
-    public static class DataCollectorBuilder {
-        HttpClient client;
-        String uri;
-        int port;
-
-        public DataCollectorBuilder setClient(HttpClient client) {
-            this.client = client;
-            return this;
-        }
-
-        public DataCollectorBuilder setUri(String uri) {
-            this.uri = uri;
-            return this;
-        }
-
-        public DataCollectorBuilder setPort(int port) {
-            this.port = port;
-            return this;
-        }
-
-        public DataCollector build() {
-            return new DataCollector(this);
-        }
     }
 }

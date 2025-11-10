@@ -3,7 +3,7 @@ package org.hrw.infrastructure.database;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import org.hrw.datamodels.ServerData;
+import org.hrw.datamodels.ServerRecord;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,11 +25,12 @@ public class DatabaseAPI implements AutoCloseable {
     private final Gson gson;
     private final ZoneId zoneId;
 
-    public DatabaseAPI(DatabaseAPIBuilder builder) {
-        this.server = builder.server;
-        this.db = builder.db;
+    public DatabaseAPI(int port, DatabaseHandler db, ZoneId zoneId) throws IOException {
+        this.server = HttpServer.create(new InetSocketAddress(port), 0);
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        this.db = db;
         this.gson = new Gson();
-        this.zoneId = builder.zoneId;
+        this.zoneId = zoneId;
 
         server.createContext("/selectData", this::handleSelectData);
     }
@@ -55,7 +56,7 @@ public class DatabaseAPI implements AutoCloseable {
                 this.respond(exchange, 400, this.jsonError("startDate", "startDate must be before endDate"));
             }
 
-            List<ServerData> serverData = this.db.readFromDatabase(startDate.toEpochSecond(), endDate.toEpochSecond(), "test_serverdata");
+            List<ServerRecord> serverData = this.db.readFromDatabase(startDate.toEpochSecond(), endDate.toEpochSecond(), "test_serverdata");
 
             this.respond(exchange, 200, this.jsonData(serverData));
         } catch (DateTimeParseException e) {
@@ -74,10 +75,10 @@ public class DatabaseAPI implements AutoCloseable {
         }
     }
 
-    private String jsonData(List<ServerData> serverData) {
+    private String jsonData(List<ServerRecord> serverData) {
         String json = "{\"count\":"+serverData.size()+",\"data\":[";
         for(int i = 0; i < serverData.size(); i++) {
-            ServerData sd = serverData.get(i);
+            ServerRecord sd = serverData.get(i);
             if(i < serverData.size() - 1) {
                 json += this.gson.toJson(sd) + ",";
             } else {
@@ -120,32 +121,6 @@ public class DatabaseAPI implements AutoCloseable {
     @Override
     public void close() {
         this.server.stop(0);
-    }
-
-    public static class DatabaseAPIBuilder {
-        private HttpServer server;
-        private DatabaseHandler db;
-        private ZoneId zoneId;
-
-        public DatabaseAPIBuilder setServer(int port) throws IOException {
-            this.server = HttpServer.create(new InetSocketAddress(port), 0);
-            server.setExecutor(Executors.newSingleThreadExecutor());
-            return this;
-        }
-
-        public DatabaseAPIBuilder setDB(DatabaseHandler db) {
-            this.db = db;
-            return this;
-        }
-
-        public DatabaseAPIBuilder setZoneId(ZoneId zoneId) {
-            this.zoneId = zoneId;
-            return this;
-        }
-
-        public DatabaseAPI build() {
-            return new DatabaseAPI(this);
-        }
     }
 }
 

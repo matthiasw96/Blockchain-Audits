@@ -17,7 +17,7 @@ import com.wavesplatform.transactions.data.StringEntry;
 import com.wavesplatform.transactions.data.DataEntry;
 import com.wavesplatform.transactions.account.PrivateKey;
 import com.wavesplatform.wavesj.Node;
-import org.hrw.datamodels.HashData;
+import org.hrw.datamodels.HashRecord;
 
 public class AnchorService {
     private final PrivateKey privateKey;
@@ -50,9 +50,9 @@ public class AnchorService {
         this.node.broadcast(tx);
     }
 
-    public void anchorData(List<HashData> hashedData) throws SQLException {
-        for(HashData hashEntry : hashedData) {
-            long timestamp = Long.parseLong(hashEntry.getTimestamp());
+    public void anchorData(List<HashRecord> hashedData) throws SQLException {
+        for(HashRecord hashEntry : hashedData) {
+            long timestamp = Long.parseLong(hashEntry.timestamp());
 
             if(timestamp % 3600 == 0) {
                 this.anchorHashTree(hashEntry);
@@ -60,12 +60,12 @@ public class AnchorService {
         }
     }
 
-    private void anchorHashTree(HashData rootHash) throws SQLException {
+    private void anchorHashTree(HashRecord rootHash) {
         try{
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring Data");
 
-            String timestamp = rootHash.getTimestamp();
-            String hourHash = rootHash.getHourHash();
+            String timestamp = rootHash.timestamp();
+            String hourHash = rootHash.hourHash();
 
             DataEntry entry = this.createDataEntry(timestamp, hourHash);
             DataTransaction transaction = this.createTransaction(entry);

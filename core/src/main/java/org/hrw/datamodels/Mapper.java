@@ -58,61 +58,49 @@ public class Mapper {
         return serverMap;
     }
 
-    public List<ServerData> resultSetToServerData(ResultSet resultSet) throws SQLException {
-        List<ServerData> serverData = new ArrayList<>();
-        List<String> columnNames = this.getColumnNames(resultSet);
+    public List<ServerRecord> resultSetToServerData(ResultSet resultSet) throws SQLException {
+        List<ServerRecord> serverData = new ArrayList<>();
 
         while (resultSet.next()) {
-            Map<String,String> map = this.createMap(columnNames, resultSet);
-            serverData.add(new ServerData(map));
+            ServerRecord record = new ServerRecord(
+                    resultSet.getString("timestamp"),
+                    resultSet.getDouble("vm2_cpu_avg"),
+                    resultSet.getDouble("vm2_cpu_max"),
+                    resultSet.getDouble("vm2_memory"),
+                    resultSet.getDouble("vm2_net_rx_total"),
+                    resultSet.getDouble("vm2_net_tx_total"),
+                    resultSet.getDouble("vm2_disk_iops_total"),
+                    resultSet.getDouble("vm2_disk_throughput_total"),
+                    resultSet.getDouble("vm2_disk_latency_avg"),
+                    resultSet.getDouble("vm3_cpu_avg"),
+                    resultSet.getDouble("vm3_cpu_max"),
+                    resultSet.getDouble("vm3_memory"),
+                    resultSet.getDouble("vm3_net_rx_total"),
+                    resultSet.getDouble("vm3_net_tx_total"),
+                    resultSet.getDouble("vm3_disk_iops_total"),
+                    resultSet.getDouble("vm3_disk_throughput_total"),
+                    resultSet.getDouble("vm3_disk_latency_avg")
+            );
+
+            serverData.add(record);
+
         }
         return serverData;
     }
 
-    private Map<String, String> createMap(List<String> columnNames, ResultSet resultSet) throws SQLException {
-        Map<String, String> map = new HashMap<>();
-
-        for(String columnName : columnNames) {
-            map.put(columnName, resultSet.getString(columnName));
-        }
-
-        return map;
-    }
-
-    private List<String> getColumnNames(ResultSet resultSet) throws SQLException {
-        List<String> columnNames = new ArrayList<>();
-
-        for(int i=1; i<resultSet.getMetaData().getColumnCount(); i++) {
-            columnNames.add(resultSet.getMetaData().getColumnName(i));
-        }
-
-        return columnNames;
-    }
-
-    public List<ServerData> xmlToServerData(Document xmlDoc) throws XPathExpressionException {
+    public List<ServerRecord> xmlToServerData(Document xmlDoc) throws XPathExpressionException {
         XPath xPath = XPathFactory.newInstance().newXPath();
         Node data = (Node) xPath.evaluate("//data", xmlDoc, XPathConstants.NODE);
-        Node legend = (Node) xPath.evaluate("//legend", xmlDoc, XPathConstants.NODE);
         NodeList rows = data.getChildNodes();
-        NodeList columns = legend.getChildNodes();
 
-        List<ServerData> unpackedData = new ArrayList<>();
+        List<String> legendList = this.createLegendList(xmlDoc);
+
+        List<ServerRecord> unpackedData = new ArrayList<>();
 
         for(int i=0; i<rows.getLength(); i++){
-            Map<String, String> serverMap = new HashMap<>();
-
-            NodeList rowEntries = rows.item(i).getChildNodes();
-            serverMap.put("timestamp", rowEntries.item(0).getTextContent());
-
-            for(int j=1; j<rowEntries.getLength(); j++){
-                if(map.containsKey(columns.item(j-1).getTextContent())){
-                    String entry = rowEntries.item(j).getTextContent();
-                    String column_name = map.get(columns.item(j-1).getTextContent());
-                    serverMap.put(column_name, entry);
-                }
-            }
-            ServerData serverData = new ServerData(serverMap);
-            unpackedData.add(serverData);
+            NodeList row = rows.item(i).getChildNodes();
+            ServerRecord record = this.mapXmlMessage(row, legendList);
+            unpackedData.add(record);
         }
 
         Collections.reverse(unpackedData);
@@ -120,20 +108,146 @@ public class Mapper {
         return unpackedData;
     }
 
-    public List<ServerData> jsonToServerData(String rawBody) throws JsonProcessingException {
-        List<ServerData> serverData = new ArrayList<>();
+    private ServerRecord mapXmlMessage(NodeList row, List<String> legendList) {
+            String timestamp = row.item(0).getTextContent();
+
+            // VM2
+            List<Double> vm2_cpu = List.of(
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu0")).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu1")).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu2")).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_cpu3")).getTextContent())
+            );
+
+            double vm2_cpu_avg = vm2_cpu.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+            double vm2_cpu_max = vm2_cpu.stream().mapToDouble(Double::doubleValue).max().orElse(Double.NaN);
+
+            double vm2_memory = Double.parseDouble(row.item(legendList.indexOf("vm2_memory")).getTextContent());
+
+            double vm2_net_rx_total = Double.parseDouble(row.item(legendList.indexOf("vm2_vif_1_rx")).getTextContent());
+            double vm2_net_tx_total = Double.parseDouble(row.item(legendList.indexOf("vm2_vif_1_tx")).getTextContent());
+
+            List<Double> vm2_disk_iops = List.of(
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_iops_total")).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_iops_total")).getTextContent())
+            );
+
+            double vm2_disk_iops_total = vm2_disk_iops.stream().mapToDouble(Double::doubleValue).sum();
+
+            List<Double> vm2_disk_throughput = List.of(
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_io_throughput_total")).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_io_throughput_total")).getTextContent())
+            );
+
+            double vm2_disk_throughput_total = vm2_disk_throughput.stream().mapToDouble(Double::doubleValue).sum();
+
+            List<Double> vm2_disk_latency = List.of(
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvda_latency")).getTextContent()),
+                    Double.parseDouble(row.item(legendList.indexOf("vm2_vbd_xvdd_latency")).getTextContent())
+            );
+
+            double vm2_disk_latency_avg = vm2_disk_latency.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+
+        //VM3
+        List<Double> vm3_cpu = List.of(
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu0")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu1")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu2")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu3")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu4")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu5")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu6")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu7")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu8")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu9")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu10")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_cpu11")).getTextContent())
+        );
+
+        double vm3_cpu_avg = vm3_cpu.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+        double vm3_cpu_max = vm3_cpu.stream().mapToDouble(Double::doubleValue).max().orElse(Double.NaN);
+
+        double vm3_memory = Double.parseDouble(row.item(legendList.indexOf("vm3_memory")).getTextContent());
+
+        double vm3_net_rx_total = Double.parseDouble(row.item(legendList.indexOf("vm3_vif_0_rx")).getTextContent());
+        double vm3_net_tx_total = Double.parseDouble(row.item(legendList.indexOf("vm3_vif_0_tx")).getTextContent());
+
+        List<Double> vm3_disk_iops = List.of(
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_iops_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_iops_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_iops_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_iops_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_iops_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_iops_total")).getTextContent())
+        );
+
+        double vm3_disk_iops_total = vm3_disk_iops.stream().mapToDouble(Double::doubleValue).sum();
+
+        List<Double> vm3_disk_throughput = List.of(
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_io_throughput_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_io_throughput_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_io_throughput_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_io_throughput_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_io_throughput_total")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_io_throughput_total")).getTextContent())
+        );
+
+        double vm3_disk_throughput_total = vm3_disk_throughput.stream().mapToDouble(Double::doubleValue).sum();
+
+        List<Double> vm3_disk_latency = List.of(
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvda_latency")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdb_latency")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdc_latency")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvde_latency")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdf_latency")).getTextContent()),
+                Double.parseDouble(row.item(legendList.indexOf("vm3_vbd_xvdg_latency")).getTextContent())
+        );
+
+        double vm3_disk_latency_avg = vm3_disk_latency.stream().mapToDouble(Double::doubleValue).average().orElse(Double.NaN);
+
+            return new ServerRecord(
+                    timestamp,
+                    vm2_cpu_avg,
+                    vm2_cpu_max,
+                    vm2_memory,
+                    vm2_net_rx_total,
+                    vm2_net_tx_total,
+                    vm2_disk_iops_total,
+                    vm2_disk_throughput_total,
+                    vm2_disk_latency_avg,
+                    vm3_cpu_avg,
+                    vm3_cpu_max,
+                    vm3_memory,
+                    vm3_net_rx_total,
+                    vm3_net_tx_total,
+                    vm3_disk_iops_total,
+                    vm3_disk_throughput_total,
+                    vm3_disk_latency_avg
+            );
+    }
+
+    private List<String> createLegendList(Document sourceXml) throws XPathExpressionException {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Node legend = (Node) xPath.evaluate("//legend", sourceXml, XPathConstants.NODE);
+        NodeList columns = legend.getChildNodes();
+
+        List<String> legendList = new ArrayList<>();
+
+        for(int i=0; i<columns.getLength(); i++){
+            legendList.add(this.map.get(columns.item(i).getTextContent()));
+        }
+
+        return legendList;
+    }
+
+    public List<ServerRecord> jsonToServerRecord(String rawBody) throws JsonProcessingException {
+        List<ServerRecord> serverData = new ArrayList<>();
 
         JsonNode root = mapper.readTree(rawBody);
         ArrayNode data = (ArrayNode) root.get("data");
 
         for(JsonNode node : data) {
-            Map<String,String> serverMap = new HashMap<>();
-
-            node.fields().forEachRemaining(entry -> {
-                serverMap.put(entry.getKey(), entry.getValue().asText());
-            });
-
-            serverData.add(new ServerData(serverMap));
+            serverData.add(this.mapper.treeToValue(node, ServerRecord.class));
         }
 
         return serverData;

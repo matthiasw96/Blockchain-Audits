@@ -1,7 +1,7 @@
 package org.hrw.application;
 
-import org.hrw.datamodels.HashData;
-import org.hrw.datamodels.ServerData;
+import org.hrw.datamodels.HashRecord;
+import org.hrw.datamodels.ServerRecord;
 import org.hrw.hashing.Hasher;
 import org.hrw.infrastructure.anchor.AnchorService;
 import org.hrw.infrastructure.collector.Collector;
@@ -31,8 +31,8 @@ public class Processor extends TimerTask {
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Starting process...");
 
-            List<ServerData> serverData = this.collector.fetch();
-            List<HashData> hashedData = this.hasher.hashData(serverData);
+            List<ServerRecord> serverData = this.collector.fetch();
+            List<HashRecord> hashedData = this.hasher.hashData(serverData);
 
             dbHandler.writeToDatabase(serverData, "test_serverdata");
             dbHandler.writeToDatabase(hashedData, "test_hashtable");

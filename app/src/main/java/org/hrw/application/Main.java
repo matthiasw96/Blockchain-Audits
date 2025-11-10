@@ -42,11 +42,10 @@ public class Main {
                             .setFormatter(FORMATTER)
                             .build();
 
-                    Hasher hasher = new Hasher.HasherBuilder()
-                            .setAlgorithm(cfg.hasherAlgorithm())
-                            .build();
+                    Hasher hasher = new Hasher(cfg.hasherAlgorithm());
 
                     Network selected = Network.parse(cfg.environmentAnchor());
+
                     AnchorService anchorService = new AnchorService.AnchorServiceBuilder()
                             .setPrivateKey(cfg.seedPhraseAnchor())
                             .setNode(selected.getNodeUri())
@@ -62,16 +61,9 @@ public class Main {
                             .setFormatter(FORMATTER)
                             .build();
 
-                    Scheduler scheduler = new Scheduler.SchedulerBuilder()
-                            .setTimerTask(processor)
-                            .setTimePeriod(cfg.timePeriodSeconds())
-                            .build();
+                    Scheduler scheduler = new Scheduler(processor, cfg.timePeriodSeconds());
 
-                    DatabaseAPI databaseAPI = new DatabaseAPI.DatabaseAPIBuilder()
-                            .setServer(8080)
-                            .setDB(dbHandler)
-                            .setZoneId(ZoneId.of("Europe/Berlin"))
-                            .build();
+                    DatabaseAPI databaseAPI = new DatabaseAPI(8080, dbHandler, ZoneId.of("Europe/Berlin"));
 
                     scheduler.executeTimer(cfg.dateOfFirstExecution());
                     databaseAPI.start();

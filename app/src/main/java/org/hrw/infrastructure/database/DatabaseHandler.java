@@ -2,7 +2,7 @@ package org.hrw.infrastructure.database;
 
 import org.hrw.datamodels.Datastructure;
 import org.hrw.datamodels.Mapper;
-import org.hrw.datamodels.ServerData;
+import org.hrw.datamodels.ServerRecord;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -28,7 +28,7 @@ public class DatabaseHandler {
         this.mapper = new Mapper();
     }
 
-    public List<ServerData> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
+    public List<ServerRecord> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
         System.out.println("Reading from database...");
         Statement statement = this.createStatement();
         String query = this.createSelectQuery(startPoint, endPoint, tableName);
@@ -41,6 +41,8 @@ public class DatabaseHandler {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database...");
             Statement statement = this.createStatement();
             String query = this.createInsertQuery(data, tableName);
+
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Executing query: " + query);
 
             statement.executeUpdate(query);
 
@@ -63,9 +65,9 @@ public class DatabaseHandler {
 
         for(int i=0;i<data.size();i++) {
             if(i == data.size()-1) {
-                values += "('" + data.get(i).toString() + ")\n";
+                values += "(" + data.get(i).toString() + ")\n";
             } else {
-                values += "('" + data.get(i).toString() + "),\n";
+                values += "(" + data.get(i).toString() + "),\n";
             }
         }
 

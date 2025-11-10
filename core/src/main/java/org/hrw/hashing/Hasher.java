@@ -1,7 +1,7 @@
 package org.hrw.hashing;
 
-import org.hrw.datamodels.HashData;
-import org.hrw.datamodels.ServerData;
+import org.hrw.datamodels.HashRecord;
+import org.hrw.datamodels.ServerRecord;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -17,20 +17,20 @@ public class Hasher {
     private List<byte[]> minuteHashes;
     private final DateTimeFormatter FORMATTER;
 
-    public Hasher(HasherBuilder builder) {
-        this.algorithm = builder.algorithm;
+    public Hasher(String algorithm) {
+        this.algorithm = algorithm;
         this.secondHashes = new ArrayList<>();
         this.minuteHashes = new ArrayList<>();
         this.FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
     }
 
-    public List<HashData> hashData(List<ServerData> data) {
+    public List<HashRecord> hashData(List<ServerRecord> data) {
         try {
-            List<HashData> hashedData = new ArrayList<>();
+            List<HashRecord> hashedData = new ArrayList<>();
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data");
 
-            for(ServerData entry : data) {
-                long timestamp = Long.parseLong(entry.getTimestamp());
+            for(ServerRecord entry : data) {
+                long timestamp = Long.parseLong(entry.timestamp());
 
                 byte[] unpackedData = entry.toString().getBytes(StandardCharsets.UTF_8);
                 byte[] entryHash = this.createEntryHash(unpackedData);
@@ -40,7 +40,7 @@ public class Hasher {
                 this.secondHashes.add(entryHash);
 
                 if(minuteHash != null) {
-                    HashData hashData = this.createHashData(minuteHash, hourHash, entry);
+                    HashRecord hashData = this.createHashData(minuteHash, hourHash, entry);
                     hashedData.add(hashData);
                 }
             }
@@ -65,6 +65,15 @@ public class Hasher {
     private byte[] createHourHash(long timestamp) throws NoSuchAlgorithmException {
         if(timestamp % 3600 == 0) {
             byte[] hourHash = this.createHashTree(this.minuteHashes, (byte) 0x02);
+
+            for(byte[] hash : minuteHashes) {
+                System.out.println(timestamp + ": " + HexFormat.of().formatHex(hash));
+            }
+
+            System.out.println(timestamp + ": " + HexFormat.of().formatHex(hourHash));
+            System.out.println("............................................");
+            System.out.println();
+
             this.minuteHashes.clear();
             return hourHash;
         } else {
@@ -92,28 +101,10 @@ public class Hasher {
         return digest.digest();
     }
 
-    private HashData createHashData(byte[] minuteHash, byte[] hourHash, ServerData entry) {
+    private HashRecord createHashData(byte[] minuteHash, byte[] hourHash, ServerRecord entry) {
         String minuteHex = HexFormat.of().formatHex(minuteHash);
         String hourHex = hourHash == null ? "" : HexFormat.of().formatHex(hourHash);
 
-        return new HashData.HashDataBuilder()
-                .setJobId(entry.getJobId())
-                .setTimestamp(entry.getTimestamp())
-                .setHourHash(hourHex)
-                .setMinuteHash(minuteHex)
-                .build();
-    }
-
-    public static class HasherBuilder {
-        String algorithm;
-
-        public HasherBuilder setAlgorithm(String algorithm) {
-            this.algorithm = algorithm;
-            return this;
-        }
-
-        public Hasher build() {
-            return new Hasher(this);
-        }
+        return new HashRecord(entry.timestamp(), minuteHex, hourHex);
     }
 }

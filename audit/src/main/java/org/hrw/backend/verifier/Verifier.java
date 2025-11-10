@@ -1,7 +1,7 @@
 package org.hrw.backend.verifier;
 
-import org.hrw.datamodels.HashData;
-import org.hrw.datamodels.ServerData;
+import org.hrw.datamodels.HashRecord;
+import org.hrw.datamodels.ServerRecord;
 import org.hrw.hashing.Hasher;
 
 import java.util.ArrayList;
@@ -11,18 +11,18 @@ public class Verifier {
     private final Hasher hasher;
     private final BlockchainHandler blockchainHandler;
 
-    public Verifier(VerifierBuilder builder ) {
-        this.hasher = builder.hasher;
-        this.blockchainHandler = builder.blockchainHandler;
+    public Verifier(Hasher hasher, BlockchainHandler blockchainHandler) {
+        this.hasher = hasher;
+        this.blockchainHandler = blockchainHandler;
     }
 
-    public boolean verify(List<ServerData> serverData) {
-        List<HashData> hashedData = this.hasher.hashData(serverData);
-        List<String> serverRootHashes = this.extractRootHashes(hashedData);
-        List<String> blockchainRootHashes = this.blockchainHandler.getBlockchainHashes(hashedData);
+    public boolean verify(List<ServerRecord> serverData) {
+        List<HashRecord> hashedData = this.hasher.hashData(serverData);
+        List<HashRecord> serverRootHashes = this.extractRootHashes(hashedData);
+        List<String> blockchainRootHashes = this.blockchainHandler.getBlockchainHashes(serverRootHashes);
 
         for(int i=0; i<serverRootHashes.size(); i++) {
-            String serverHash = serverRootHashes.get(i);
+            String serverHash = serverRootHashes.get(i).hourHash();
             String blockchainHash = blockchainRootHashes.get(i);
 
             if(!serverHash.equals(blockchainHash)) {
@@ -32,32 +32,14 @@ public class Verifier {
         return true;
     }
 
-    private List<String> extractRootHashes(List<HashData> hashedData) {
-        List<String> rootHashes = new ArrayList<>();
-        for (HashData hashData : hashedData) {
-            if(hashData.getHourHash() != null) {
-                rootHashes.add(hashData.getHourHash());
+    private List<HashRecord> extractRootHashes(List<HashRecord> hashedData) {
+        List<HashRecord> rootHashes = new ArrayList<>();
+        for (HashRecord hashData : hashedData) {
+            if(!hashData.hourHash().equals("")) {
+                System.out.println(hashData.timestamp() + ": " + hashData.hourHash());
+                rootHashes.add(hashData);
             }
         }
         return rootHashes;
-    }
-
-    public static class VerifierBuilder {
-        private Hasher hasher;
-        private BlockchainHandler blockchainHandler;
-
-        public VerifierBuilder setHasher(Hasher hasher) {
-            this.hasher = hasher;
-            return this;
-        }
-
-        public VerifierBuilder setBlockchainHandler(BlockchainHandler blockchainHandler) {
-            this.blockchainHandler = blockchainHandler;
-            return this;
-        }
-
-        public Verifier build() {
-            return new Verifier(this);
-        }
     }
 }

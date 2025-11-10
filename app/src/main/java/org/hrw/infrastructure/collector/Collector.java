@@ -1,7 +1,7 @@
 package org.hrw.infrastructure.collector;
 
 import org.hrw.datamodels.Mapper;
-import org.hrw.datamodels.ServerData;
+import org.hrw.datamodels.ServerRecord;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -37,13 +37,13 @@ public class Collector {
         this.mapper = new Mapper();
     }
 
-    public List<ServerData> fetch(){
+    public List<ServerRecord> fetch(){
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Fetching server data...");
 
             String rawData = this.getServerData();
             Document xmlDoc = this.buildXmlDoc(rawData);
-            List<ServerData> serverData = this.mapper.xmlToServerData(xmlDoc);
+            List<ServerRecord> serverData = this.mapper.xmlToServerData(xmlDoc);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data received");
             return serverData;
@@ -85,7 +85,6 @@ public class Collector {
         String user;
         String pass;
         int period;
-        Map<String, String> map;
         DateTimeFormatter FORMATTER;
 
         public CollectorBuilder setUri(String uri) {
