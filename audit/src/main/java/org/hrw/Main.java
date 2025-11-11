@@ -12,8 +12,8 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        LocalDateTime start = LocalDateTime.of(2025,10,8,10,0);
-        LocalDateTime end = LocalDateTime.of(2025,10,8,16,0);
+        LocalDateTime start = LocalDateTime.of(2025,11,11,15,5);
+        LocalDateTime end = LocalDateTime.of(2025,11,11,15,7);
 
         String collectorUri = "localhost";
         int port = 8080;
@@ -28,14 +28,16 @@ public class Main {
 
         BlockchainHandler bcHandler = new BlockchainHandler(bcUri, bcAddress);
 
-        Hasher hasher = new Hasher(hasherAlgorithm);
+        Hasher hasher = new Hasher(hasherAlgorithm, 1);
 
         Verifier verifier = new Verifier(hasher, bcHandler);
 
         try {
             List<ServerRecord> data = collector.getServerData(start, end);
 
+            System.out.println("Test 1");
             boolean verified = verifier.verify(data);
+            System.out.println("Test 2");
 
             System.out.println(verified);
 

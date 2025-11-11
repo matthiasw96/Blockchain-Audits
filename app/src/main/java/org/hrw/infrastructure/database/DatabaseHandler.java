@@ -11,8 +11,6 @@ import java.util.*;
 
 public class DatabaseHandler {
     private final String hostAddress;
-    private final int port;
-    private final String databaseName;
     private final String username;
     private final String password;
     private final Mapper mapper;
@@ -20,8 +18,6 @@ public class DatabaseHandler {
 
     public DatabaseHandler(DatabaseHandlerBuilder builder) {
         this.hostAddress = builder.hostAddress;
-        this.port = builder.port;
-        this.databaseName = builder.databaseName;
         this.username = builder.username;
         this.password = builder.password;
         this.FORMATTER = builder.FORMATTER;
@@ -29,7 +25,8 @@ public class DatabaseHandler {
     }
 
     public List<ServerRecord> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
-        System.out.println("Reading from database...");
+        System.out.println(LocalDateTime.now().format(FORMATTER) + "Reading from database...");
+
         Statement statement = createStatement();
         String query = createSelectQuery(startPoint, endPoint, tableName);
         ResultSet resultSet = statement.executeQuery(query);
@@ -39,11 +36,9 @@ public class DatabaseHandler {
     public void writeToDatabase(List<? extends Datastructure> data, String tableName) throws SQLException {
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database...");
+
             Statement statement = createStatement();
-
             String query = createInsertQuery(data, tableName);
-
-            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Executing query: " + query);
             statement.executeUpdate(query);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data stored");
@@ -54,7 +49,7 @@ public class DatabaseHandler {
     }
 
     private Statement createStatement() throws SQLException {
-        String url = "jdbc:postgresql://" + hostAddress + ":" + port + "/" + databaseName;
+        String url = "jdbc:postgresql://" + hostAddress + ":5432/postgres";
         Connection connection = DriverManager.getConnection(url, username, password);
         return connection.createStatement();
     }
@@ -63,12 +58,9 @@ public class DatabaseHandler {
         String columnNames = data.getFirst().getAttributeNames();
         String values = "";
 
-        for(int i=0;i<data.size();i++) {
-            if(i == data.size()-1) {
-                values += "(" + data.get(i).toString() + ")\n";
-            } else {
-                values += "(" + data.get(i).toString() + "),\n";
-            }
+        for(int i = 0; i < data.size(); i++) {
+            values += "(" + data.get(i).toString() + ")";
+            values += (i == data.size() - 1) ? "\n" : ",\n";
         }
 
         return """
@@ -90,24 +82,12 @@ public class DatabaseHandler {
 
     public static class DatabaseHandlerBuilder {
         String hostAddress;
-        int port;
-        String databaseName;
         String username;
         String password;
         DateTimeFormatter FORMATTER;
 
         public DatabaseHandlerBuilder setHostAddress(String hostAddress) {
             this.hostAddress = hostAddress;
-            return this;
-        }
-
-        public DatabaseHandlerBuilder setPort(int port) {
-            this.port = port;
-            return this;
-        }
-
-        public DatabaseHandlerBuilder setDatabaseName(String databaseName) {
-            this.databaseName = databaseName;
             return this;
         }
 

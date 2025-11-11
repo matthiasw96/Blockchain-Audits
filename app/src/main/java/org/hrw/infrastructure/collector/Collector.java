@@ -48,8 +48,8 @@ public class Collector {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data received");
             return serverData;
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Fetching server data failed");
+            e.printStackTrace();
         }
         return null;
     }
@@ -57,9 +57,7 @@ public class Collector {
     private String getServerData() throws IOException, InterruptedException {
         String auth = user+ ":" + pass;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
-
         HttpRequest request = createRequest(encodedAuth);
-
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
@@ -74,7 +72,6 @@ public class Collector {
 
     private Document buildXmlDoc(String input) throws ParserConfigurationException, IOException, SAXException {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(input.getBytes());
-
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(inputStream);

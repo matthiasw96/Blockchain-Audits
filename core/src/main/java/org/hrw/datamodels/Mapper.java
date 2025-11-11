@@ -38,7 +38,6 @@ public class Mapper {
     private Map<String, String> createColumnMap() {
         try (InputStream in = Mapper.class.getResourceAsStream("/map.csv");
             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-
             Map<String, String> serverMap = readLines(reader);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Loaded " + serverMap.size() + " entries");
@@ -82,6 +81,7 @@ public class Mapper {
         }
         return serverData;
     }
+
 
     private VMRecord resultSetToVMRecord(ResultSet resultSet, int vm) throws SQLException {
         double cpu_avg = resultSet.getDouble("vm"+vm+"_cpu_avg");

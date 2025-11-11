@@ -29,6 +29,9 @@ public class Verifier {
             String serverHash = serverRootHashes.get(i).hourHash();
             String blockchainHash = blockchainRootHashes.get(i);
 
+            System.out.println("server hash: " + serverHash);
+            System.out.println("blockchain hash: " + blockchainHash);
+
             if(!serverHash.equals(blockchainHash)) {
                 return false;
             }

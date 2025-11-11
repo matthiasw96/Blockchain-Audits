@@ -16,31 +16,34 @@ public class Hasher {
     private List<byte[]> secondHashes;
     private List<byte[]> minuteHashes;
     private final DateTimeFormatter FORMATTER;
+    private final int interval;
 
-    public Hasher(String algorithm) {
+    public Hasher(String algorithm, int interval) {
         this.algorithm = algorithm;
         this.secondHashes = new ArrayList<>();
         this.minuteHashes = new ArrayList<>();
         this.FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        this.interval = interval;
     }
 
     public List<HashRecord> hashData(List<ServerRecord> data) {
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data");
         try {
             List<HashRecord> hashedData = new ArrayList<>();
-            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data");
 
             for(ServerRecord entry : data) {
+
                 long timestamp = Long.parseLong(entry.timestamp());
 
                 byte[] unpackedData = entry.toString().getBytes(StandardCharsets.UTF_8);
-                byte[] entryHash = this.createEntryHash(unpackedData);
-                byte[] hourHash = this.createHourHash(timestamp);
-                byte[] minuteHash = this.createMinuteHash(timestamp);
+                byte[] entryHash = createEntryHash(unpackedData);
+                byte[] hourHash = createHourHash(timestamp);
+                byte[] minuteHash = createMinuteHash(timestamp);
 
                 this.secondHashes.add(entryHash);
 
                 if(minuteHash != null) {
-                    HashRecord hashData = this.createHashData(minuteHash, hourHash, entry);
+                    HashRecord hashData = createHashData(minuteHash, hourHash, entry);
                     hashedData.add(hashData);
                 }
             }
@@ -49,31 +52,21 @@ public class Hasher {
 
             return hashedData;
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.println("Hashing failed");
+            e.printStackTrace();
         }
         return null;
     }
 
     public byte[] createEntryHash(byte[] data) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance(this.algorithm);
-        digest.update((byte) 0x00);
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
         digest.update(data);
         return digest.digest();
     }
 
     private byte[] createHourHash(long timestamp) throws NoSuchAlgorithmException {
-        if(timestamp % 3600 == 0) {
-            byte[] hourHash = this.createHashTree(this.minuteHashes, (byte) 0x02);
-
-            for(byte[] hash : minuteHashes) {
-                System.out.println(timestamp + ": " + HexFormat.of().formatHex(hash));
-            }
-
-            System.out.println(timestamp + ": " + HexFormat.of().formatHex(hourHash));
-            System.out.println("............................................");
-            System.out.println();
-
+        if(timestamp % (interval * 60L) == 0) {
+            byte[] hourHash = this.createHashTree(this.minuteHashes);
             this.minuteHashes.clear();
             return hourHash;
         } else {
@@ -83,18 +76,17 @@ public class Hasher {
 
     private byte[] createMinuteHash(long timestamp) throws NoSuchAlgorithmException {
         if(timestamp % 60 == 0) {
-            byte[] minuteHash = this.createHashTree(this.secondHashes, (byte) 0x03);
-            this.minuteHashes.add(minuteHash);
-            this.secondHashes.clear();
+            byte[] minuteHash = this.createHashTree(secondHashes);
+            minuteHashes.add(minuteHash);
+            secondHashes.clear();
             return minuteHash;
         } else {
             return null;
         }
     }
 
-    private byte[] createHashTree(List<byte[]> data, byte level) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance(this.algorithm);
-        digest.update(level);
+    private byte[] createHashTree(List<byte[]> data) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
         for (byte[] row : data) {
             digest.update(row);
         }

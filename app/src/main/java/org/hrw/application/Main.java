@@ -22,15 +22,13 @@ public class Main {
             UserInterface ui = new UserInterface();
 
             ui.setOnStart(cfg -> new Thread(() -> {
-                String url = "jdbc:postgresql://" + cfg.hostDb() + ":" + cfg.portDb() + "/" + cfg.dbName();
+                String url = "jdbc:postgresql://" + cfg.hostDb() + ":5432/postgres";
                 System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to " + url);
                 try {
                     DatabaseHandler dbHandler = new DatabaseHandler.DatabaseHandlerBuilder()
                             .setHostAddress(cfg.hostDb())
-                            .setPort(cfg.portDb())
                             .setUsername(cfg.userDb())
                             .setPassword(cfg.passDb())
-                            .setDatabaseName(cfg.dbName())
                             .setFormatter(FORMATTER)
                             .build();
 
@@ -42,7 +40,7 @@ public class Main {
                             .setFormatter(FORMATTER)
                             .build();
 
-                    Hasher hasher = new Hasher(cfg.hasherAlgorithm());
+                    Hasher hasher = new Hasher(cfg.hasherAlgorithm(), cfg.intervalAnchor());
 
                     Network selected = Network.parse(cfg.environmentAnchor());
 

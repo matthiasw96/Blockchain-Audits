@@ -39,16 +39,8 @@ public class AnchorService {
                 builder(Collections.singletonList(entry))
                 .fee(0)
                 .timestamp(Instant.now().toEpochMilli())
-                .chainId(this.networkChainId)
-                .getSignedWith(this.privateKey);
-    }
-
-    private DataEntry createDataEntry(String timestamp, String hashValue) {
-        return new StringEntry(timestamp, hashValue);
-    }
-
-    private void broadcastEntry(DataTransaction tx) throws NodeException, IOException {
-        this.node.broadcast(tx);
+                .chainId(networkChainId)
+                .getSignedWith(privateKey);
     }
 
     public void anchorData(List<HashRecord> hashedData) {
@@ -65,14 +57,14 @@ public class AnchorService {
         try{
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring Data");
 
-            DataEntry entry = createDataEntry(rootHash.timestamp(), rootHash.hourHash());
+            DataEntry entry = new StringEntry(rootHash.timestamp(), rootHash.hourHash());
             DataTransaction transaction = createTransaction(entry);
-            broadcastEntry(transaction);
+            node.broadcast(transaction);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data Anchored");
         } catch(Exception e) {
-            e.printStackTrace();
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring data failed");
+            e.printStackTrace();
         }
     }
 

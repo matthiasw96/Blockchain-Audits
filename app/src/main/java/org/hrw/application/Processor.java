@@ -42,8 +42,8 @@ public class Processor extends TimerTask {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Finished processing.\n\n");
             System.out.println("--------------------------------------------------");
         } catch (Exception e) {
-            e.printStackTrace();
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Process failed");
+            e.printStackTrace();
         }
     }
 
