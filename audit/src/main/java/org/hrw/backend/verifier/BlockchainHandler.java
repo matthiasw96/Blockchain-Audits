@@ -30,7 +30,7 @@ public class BlockchainHandler {
 
         try {
             for (HashRecord hash : hashedData) {
-                String singleHash = this.getSingleHash(hash);
+                String singleHash = getSingleHash(hash);
                 hashes.add(singleHash);
             }
             return hashes;
@@ -44,7 +44,7 @@ public class BlockchainHandler {
     private String getSingleHash(HashRecord hashData) throws IOException, InterruptedException {
         String timestamp = hashData.timestamp();
 
-        String response = this.callBlockchain(timestamp);
+        String response = callBlockchain(timestamp);
 
         System.out.println(response);
 
@@ -54,7 +54,7 @@ public class BlockchainHandler {
     }
 
     private String callBlockchain(String timestamp) throws IOException, InterruptedException {
-        HttpRequest request = this.createRequest(timestamp);
+        HttpRequest request = createRequest(timestamp);
         System.out.println("Request created");
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("Response received");

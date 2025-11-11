@@ -31,13 +31,13 @@ public class Processor extends TimerTask {
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Starting process...");
 
-            List<ServerRecord> serverData = this.collector.fetch();
-            List<HashRecord> hashedData = this.hasher.hashData(serverData);
+            List<ServerRecord> serverData = collector.fetch();
+            List<HashRecord> hashedData = hasher.hashData(serverData);
 
             dbHandler.writeToDatabase(serverData, "serverdata");
             dbHandler.writeToDatabase(hashedData, "hashdata");
 
-            this.anchorService.anchorData(hashedData);
+            anchorService.anchorData(hashedData);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Finished processing.\n\n");
             System.out.println("--------------------------------------------------");

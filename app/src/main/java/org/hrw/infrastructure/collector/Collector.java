@@ -41,9 +41,9 @@ public class Collector {
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Fetching server data...");
 
-            String rawData = this.getServerData();
-            Document xmlDoc = this.buildXmlDoc(rawData);
-            List<ServerRecord> serverData = this.mapper.xmlToServerData(xmlDoc);
+            String rawData = getServerData();
+            Document xmlDoc = buildXmlDoc(rawData);
+            List<ServerRecord> serverData = mapper.xmlToServerData(xmlDoc);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data received");
             return serverData;
@@ -58,7 +58,7 @@ public class Collector {
         String auth = user+ ":" + pass;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
 
-        HttpRequest request = this.createRequest(encodedAuth);
+        HttpRequest request = createRequest(encodedAuth);
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
@@ -117,4 +117,3 @@ public class Collector {
         }
     }
 }
-

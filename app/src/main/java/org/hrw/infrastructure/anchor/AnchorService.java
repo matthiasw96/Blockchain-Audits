@@ -5,7 +5,6 @@ import com.wavesplatform.wavesj.exceptions.NodeException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -50,12 +49,12 @@ public class AnchorService {
         this.node.broadcast(tx);
     }
 
-    public void anchorData(List<HashRecord> hashedData) throws SQLException {
+    public void anchorData(List<HashRecord> hashedData) {
         for(HashRecord hashEntry : hashedData) {
             long timestamp = Long.parseLong(hashEntry.timestamp());
 
             if(timestamp % 3600 == 0) {
-                this.anchorHashTree(hashEntry);
+                anchorHashTree(hashEntry);
             }
         }
     }
@@ -64,12 +63,9 @@ public class AnchorService {
         try{
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring Data");
 
-            String timestamp = rootHash.timestamp();
-            String hourHash = rootHash.hourHash();
-
-            DataEntry entry = this.createDataEntry(timestamp, hourHash);
-            DataTransaction transaction = this.createTransaction(entry);
-            this.broadcastEntry(transaction);
+            DataEntry entry = createDataEntry(rootHash.timestamp(), rootHash.hourHash());
+            DataTransaction transaction = createTransaction(entry);
+            broadcastEntry(transaction);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data Anchored");
         } catch(Exception e) {

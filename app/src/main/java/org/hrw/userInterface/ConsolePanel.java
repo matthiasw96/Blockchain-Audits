@@ -25,14 +25,6 @@ public class ConsolePanel extends JPanel {
         System.setErr(outPs);
     }
 
-    /** If you just want a logger-like API */
-    public void println(String s) {
-        SwingUtilities.invokeLater(() -> area.append(s + System.lineSeparator()));
-    }
-
-    /** Optional: clear / limit size */
-    public void clear() { area.setText(""); }
-
     // --- OutputStream that safely appends to the JTextArea ---
     private static class TextAreaOutputStream extends OutputStream {
         private final JTextArea area;

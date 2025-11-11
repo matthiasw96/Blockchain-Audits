@@ -8,7 +8,9 @@ import org.hrw.datamodels.ServerRecord;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidParameterException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -36,33 +38,39 @@ public class DatabaseAPI implements AutoCloseable {
     }
 
     private void handleSelectData(HttpExchange exchange) throws IOException {
-        Map<String, String> params = this.parseQuery(exchange.getRequestURI().getRawQuery());
-
-        String start = params.get("startDate");
-        String end = params.get("endDate");
-
-        if(start == null || end == null) {
-            this.respond(exchange, 400, this.jsonError("missing_params","startDate and endDate required"));
-            return;
-        }
-
-        ZonedDateTime startDate, endDate;
+        Map<String, String> params = parseQuery(exchange.getRequestURI().getRawQuery());
 
         try {
-            startDate = LocalDateTime.parse(start).atZone(zoneId);
-            endDate   = LocalDateTime.parse(end).atZone(zoneId);
+            ZonedDateTime startDate = parseDate(params.get("startDate"));
+            ZonedDateTime endDate = parseDate(params.get("endDate"));
 
-            if(endDate.isBefore(startDate)) {
-                this.respond(exchange, 400, this.jsonError("startDate", "startDate must be before endDate"));
-            }
+            checkDates(startDate, endDate);
 
-            List<ServerRecord> serverData = this.db.readFromDatabase(startDate.toEpochSecond(), endDate.toEpochSecond(), "test_serverdata");
+            List<ServerRecord> serverData = db.readFromDatabase(startDate.toEpochSecond(), endDate.toEpochSecond(), "serverdata");
 
-            this.respond(exchange, 200, this.jsonData(serverData));
+            respond(exchange, 200, jsonData(serverData));
         } catch (DateTimeParseException e) {
-            respond(exchange, 400, this.jsonError("invalid_date","Use YYYY-MM-DDTHH:MM:SS CTE"));
+            respond(exchange, 400, jsonError("Bad Request","Invalid date. Use yyyy-MM-ddTHH:mm:ss CET"));
+        } catch (InvalidParameterException e){
+            respond(exchange, 400, jsonError("Bad Request", "Impossible date range. StartDate must be before endDate"));
+        } catch (IllegalArgumentException e) {
+            respond(exchange, 400, jsonError("Bad Request","Missing params. StartDate and endDate required"));
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            respond(exchange, 500, jsonError("Internal Server Error","SQL Exception. Error reaching database"));
+        }
+    }
+
+    private ZonedDateTime parseDate(String date) throws IllegalArgumentException, DateTimeParseException {
+        if(date == null) {
+            throw new IllegalArgumentException();
+        }
+
+        return LocalDateTime.parse(date).atZone(zoneId);
+    }
+
+    private void checkDates(ZonedDateTime startDate, ZonedDateTime endDate) throws InvalidParameterException {
+        if(endDate.isBefore(startDate)) {
+            throw new InvalidParameterException();
         }
     }
 
@@ -75,52 +83,35 @@ public class DatabaseAPI implements AutoCloseable {
         }
     }
 
-    private String jsonData(List<ServerRecord> serverData) {
-        String json = "{\"count\":"+serverData.size()+",\"data\":[";
-        for(int i = 0; i < serverData.size(); i++) {
-            ServerRecord sd = serverData.get(i);
-            if(i < serverData.size() - 1) {
-                json += this.gson.toJson(sd) + ",";
-            } else {
-                json += this.gson.toJson(sd);
-            }
-        }
-        json += "]}";
-
-        return json;
+    private String jsonData(List<ServerRecord> data) {
+        return gson.toJson(new DataResponse(data.size(), data));
     }
-
     private String jsonError(String code, String msg) {
-        return "{\"error\":\"" + code + "\",\"message\":\"" + msg + "\"}";
+        return gson.toJson(new ErrorResponse(code, msg));
     }
 
-    private Map<String,String> parseQuery(String query) {
-        Map<String,String> map = new HashMap<>();
-
-        if(query == null || query.isEmpty()) {
-            return map;
-        }
+    private Map<String, String> parseQuery(String query) {
+        Map<String, String> map = new HashMap<>();
+        if (query == null || query.isEmpty()) return map;
 
         for (String pair : query.split("&")) {
-            int idx = pair.indexOf("=");
-            String key = idx > 0 ? pair.substring(0, idx) : pair;
-            String value = idx > 0 ? pair.substring(idx + 1) : "";
-
-            map.put(key, value);
+            String[] kv = pair.split("=", 2);
+            String key = URLDecoder.decode(kv[0], StandardCharsets.UTF_8);
+            String val = kv.length > 1 ? URLDecoder.decode(kv[1], StandardCharsets.UTF_8) : "";
+            map.put(key, val);
         }
-
-        System.out.println("Map: " + map);
-
         return map;
     }
 
     public void start() {
-        this.server.start();
+        server.start();
     }
 
     @Override
     public void close() {
-        this.server.stop(0);
+        server.stop(0);
     }
-}
 
+    private record DataResponse(int count, List<ServerRecord> data) {}
+    private record ErrorResponse(String error, String message) {}
+}

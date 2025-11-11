@@ -26,12 +26,12 @@ public class DataCollector {
 
     public List<ServerRecord> getServerData(LocalDateTime start, LocalDateTime end) throws IOException, InterruptedException {
         System.out.println("Retrieving server data...");
-        String rawBody = this.callDatabase(start, end);
-        return this.mapper.jsonToServerRecord(rawBody);
+        String rawBody = callDatabase(start, end);
+        return mapper.jsonToServerRecord(rawBody);
     }
 
     private String callDatabase(LocalDateTime start, LocalDateTime end) throws IOException, InterruptedException {
-        HttpRequest request = this.createRequest(start, end);
+        HttpRequest request = createRequest(start, end);
         System.out.println("Request created");
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println("Response received");

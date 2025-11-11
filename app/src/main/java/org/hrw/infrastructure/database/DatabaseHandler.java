@@ -30,8 +30,8 @@ public class DatabaseHandler {
 
     public List<ServerRecord> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
         System.out.println("Reading from database...");
-        Statement statement = this.createStatement();
-        String query = this.createSelectQuery(startPoint, endPoint, tableName);
+        Statement statement = createStatement();
+        String query = createSelectQuery(startPoint, endPoint, tableName);
         ResultSet resultSet = statement.executeQuery(query);
         return this.mapper.resultSetToServerData(resultSet);
     }
@@ -39,11 +39,11 @@ public class DatabaseHandler {
     public void writeToDatabase(List<? extends Datastructure> data, String tableName) throws SQLException {
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database...");
-            Statement statement = this.createStatement();
-            String query = this.createInsertQuery(data, tableName);
+            Statement statement = createStatement();
+
+            String query = createInsertQuery(data, tableName);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Executing query: " + query);
-
             statement.executeUpdate(query);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data stored");

@@ -109,7 +109,6 @@ public class UserInterface extends JFrame {
     }
 
     private void onStart(ActionEvent e) {
-        // Basic read + validation demo
         try {
             Config cfg = readConfig();
             status.setText("Running (every " + cfg.timePeriodSeconds + " s)");
@@ -129,7 +128,6 @@ public class UserInterface extends JFrame {
     }
 
     private void onOpenLogViewer(ActionEvent e) {
-// In your UI class, inside the LogViewer button handler:
         JDialog dlg = new JDialog(this, "Console Output", false);
         ConsolePanel console = new ConsolePanel();
         console.hookSystemStreams(); // redirect System.out/err to the panel
@@ -137,11 +135,6 @@ public class UserInterface extends JFrame {
         dlg.pack();
         dlg.setLocationRelativeTo(this);
         dlg.setVisible(true);
-
-// Test lines (anywhere in your code now show up in the panel):
-        System.out.println("Hello from server fetcher!");
-        System.err.println("Oops, an error occurred.");
-
     }
 
     private Config readConfig() {
@@ -209,7 +202,6 @@ public class UserInterface extends JFrame {
             public Object getValue() {
                 Object v = super.getValue();
                 if (v instanceof Date) return v;
-                // Try to parse if needed
                 try {
                     return sdf.parse(getText());
                 } catch (ParseException e) {
@@ -232,15 +224,6 @@ public class UserInterface extends JFrame {
     public void setOnStart(Consumer<Config> handler) { this.onStart = handler; }
     public void setOnStop(Runnable handler) { this.onStop = handler; }
 
-    private void handleStart() {
-        Config cfg = readConfigFromFields(); // collect & validate UI inputs
-        if (onStart != null) onStart.accept(cfg);
-    }
-
-    private void handleStop() {
-        if (onStop != null) onStop.run();
-    }
-
     private Config readConfigFromFields() {
         // read values from your text fields (example names)
         return new Config(
@@ -252,4 +235,3 @@ public class UserInterface extends JFrame {
         );
     }
 }
-
