@@ -34,6 +34,7 @@ public class UserInterface extends JFrame {
     private final String[] options = {"TESTNET","STAGENET","MAINNET"};
     private final JTextField seedPhraseAnchor = new JTextField();
     private final JComboBox<String> environmentAnchor = new JComboBox<>(options);
+    private final JFormattedTextField intervalAnchor = intField(60);
 
     // Scheduling
     private final JFormattedTextField timePeriod = intField(60); // seconds
@@ -80,6 +81,7 @@ public class UserInterface extends JFrame {
         row = sectionLabel(content, g, row, "Anchor Service");
         row = addRow(content, g, row, "seedPhraseAnchor", seedPhraseAnchor);
         row = addRow(content, g, row, "environmentAnchor", environmentAnchor);
+        row = addRow(content, g, row, "intervalAnchor", intervalAnchor);
 
         row = sectionLabel(content, g, row, "Schedule");
         row = addRow(content, g, row, "timePeriod (s)", timePeriod);
@@ -152,13 +154,14 @@ public class UserInterface extends JFrame {
 
         String seedPhrase = reqText(seedPhraseAnchor, "seedPhraseAnchor");
         String environment = environmentAnchor.getSelectedItem().toString();
+        int interval = ((Number) intervalAnchor.getValue()).intValue();
 
         int period = ((Number) timePeriod.getValue()).intValue();
         Date first = (Date) dateOfFirstExecution.getValue();
 
         if (period <= 0) throw new IllegalArgumentException("timePeriod must be > 0 seconds");
         return new Config(hostSrv, userSrv, passSrv, hDb, pDb, uDb, pDbPass, nameDb, seedPhrase, environment, algorithm,
-                period, first);
+                period, first, interval);
     }
 
     private static String reqText(JTextField field, String name) {
@@ -218,8 +221,9 @@ public class UserInterface extends JFrame {
     public record Config(
             String hostServer, String userServer, String passServer,
             String hostDb, int portDb, String userDb, String passDb, String dbName, String seedPhraseAnchor, String environmentAnchor, String hasherAlgorithm,
-            int timePeriodSeconds, Date dateOfFirstExecution
-    ) {}
+            int timePeriodSeconds, Date dateOfFirstExecution, int intervalAnchor
+    ) {
+    }
 
     public void setOnStart(Consumer<Config> handler) { this.onStart = handler; }
     public void setOnStop(Runnable handler) { this.onStop = handler; }
@@ -231,7 +235,7 @@ public class UserInterface extends JFrame {
                 hostDb.getText(), ((Number) portDb.getValue()).intValue(), userDb.getText(),
                 new String(passDb.getPassword()), dbName.getText(), seedPhraseAnchor.getText(),
                 environmentAnchor.getSelectedItem().toString(), hasherAlgorithm.getText(), ((Number) timePeriod.getValue()).intValue(),
-                (Date) dateOfFirstExecution.getValue()
+                (Date) dateOfFirstExecution.getValue(), ((Number) intervalAnchor.getValue()).intValue()
         );
     }
 }

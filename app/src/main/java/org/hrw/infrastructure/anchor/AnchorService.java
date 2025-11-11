@@ -23,6 +23,7 @@ public class AnchorService {
     private final byte networkChainId;
     private final Node node;
     private final DateTimeFormatter FORMATTER;
+    private final int interval;
 
 
     public AnchorService(AnchorServiceBuilder builder) {
@@ -30,6 +31,7 @@ public class AnchorService {
         this.networkChainId = builder.networkChainId;
         this.node = builder.node;
         this.FORMATTER = builder.FORMATTER;
+        this.interval = builder.interval;
     }
 
     private DataTransaction createTransaction(DataEntry entry) {
@@ -53,7 +55,7 @@ public class AnchorService {
         for(HashRecord hashEntry : hashedData) {
             long timestamp = Long.parseLong(hashEntry.timestamp());
 
-            if(timestamp % 3600 == 0) {
+            if(timestamp % (interval * 60L) == 0) {
                 anchorHashTree(hashEntry);
             }
         }
@@ -79,6 +81,7 @@ public class AnchorService {
         byte networkChainId;
         Node node;
         DateTimeFormatter FORMATTER;
+        int interval;
 
         public AnchorServiceBuilder setPrivateKey(String seedPhrase) {
             this.privateKey = PrivateKey.fromSeed(seedPhrase);
@@ -97,6 +100,11 @@ public class AnchorService {
 
         public AnchorServiceBuilder setFormatter(DateTimeFormatter FORMATTER) {
             this.FORMATTER = FORMATTER;
+            return this;
+        }
+
+        public AnchorServiceBuilder setInterval(int interval) {
+            this.interval = interval;
             return this;
         }
 

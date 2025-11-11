@@ -51,6 +51,7 @@ public class Main {
                             .setNode(selected.getNodeUri())
                             .setNetworkChainId(selected.getChainId())
                             .setFormatter(FORMATTER)
+                            .setInterval(cfg.intervalAnchor())
                             .build();
 
                     Processor processor = new Processor.ProcessorBuilder()
