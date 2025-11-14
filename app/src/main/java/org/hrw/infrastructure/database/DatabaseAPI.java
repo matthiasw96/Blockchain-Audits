@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,17 @@ public class DatabaseAPI implements AutoCloseable {
     private void handleSelectData(HttpExchange exchange) throws IOException {
         Map<String, String> params = parseQuery(exchange.getRequestURI().getRawQuery());
 
+        System.out.println("Dates received: ");
+        System.out.println("Start date: " + params.get("startDate"));
+        System.out.println("End date: " + params.get("endDate"));
+
         try {
-            ZonedDateTime startDate = parseDate(params.get("startDate"));
-            ZonedDateTime endDate = parseDate(params.get("endDate"));
+            ZonedDateTime startDate = calculateStart(params.get("startDate"));
+            ZonedDateTime endDate = calculateEnd(params.get("endDate"));
+
+            System.out.println("Dates Calculated: ");
+            System.out.println("Start date:\tFormatted: " + startDate+"\tUnix seconds: " + startDate.toEpochSecond());
+            System.out.println("Start date:\tFormatted: " + endDate+"\tUnix seconds: " + endDate.toEpochSecond());
 
             checkDates(startDate, endDate);
 
@@ -60,12 +69,30 @@ public class DatabaseAPI implements AutoCloseable {
         }
     }
 
+    private ZonedDateTime calculateStart(String end) {
+        ZonedDateTime endDate = parseDate(end);
+
+        int minute = endDate.getMinute();
+        int minutesToSubtract = (minute >= 30) ? (minute - 30) : minute;
+
+        return endDate.minusMinutes(minutesToSubtract).withSecond(0);
+    }
+
+    private ZonedDateTime calculateEnd(String start) throws IllegalArgumentException, DateTimeParseException {
+        ZonedDateTime startDate = parseDate(start);
+
+        int minute = startDate.getMinute();
+        int minutesToAdd = (minute < 30) ? (30-minute) : (60-minute);
+        return startDate.plusMinutes(minutesToAdd).withSecond(0);
+    }
+
+
     private ZonedDateTime parseDate(String date) throws IllegalArgumentException, DateTimeParseException {
         if(date == null) {
             throw new IllegalArgumentException();
         }
 
-        return LocalDateTime.parse(date).atZone(zoneId);
+        return LocalDateTime.parse(date).atZone(zoneId).truncatedTo(ChronoUnit.MINUTES);
     }
 
     private void checkDates(ZonedDateTime startDate, ZonedDateTime endDate) throws InvalidParameterException {

@@ -13,8 +13,8 @@ import java.util.*;
 
 public class Hasher {
     private final String algorithm;
-    private List<byte[]> secondHashes;
-    private List<byte[]> minuteHashes;
+    private List<String> secondHashes;
+    private List<String> minuteHashes;
     private final DateTimeFormatter FORMATTER;
     private final int interval;
 
@@ -30,21 +30,22 @@ public class Hasher {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data");
         try {
             List<HashRecord> hashedData = new ArrayList<>();
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data Size: " + data.size());
 
             for(ServerRecord entry : data) {
 
                 long timestamp = Long.parseLong(entry.timestamp());
+                String secondHash = createEntryHash(entry.toString());
 
-                byte[] unpackedData = entry.toString().getBytes(StandardCharsets.UTF_8);
-                byte[] entryHash = createEntryHash(unpackedData);
-                byte[] hourHash = createHourHash(timestamp);
-                byte[] minuteHash = createMinuteHash(timestamp);
+                if(!secondHashes.contains(secondHash)) {
+                    String minuteHash = createMinuteHash(timestamp);
+                    String hourHash = createHourHash(timestamp);
+                    secondHashes.add(secondHash);
 
-                this.secondHashes.add(entryHash);
+                    HashRecord hashEntry = new HashRecord(entry.timestamp(), secondHash, minuteHash, hourHash, Integer.toString(minuteHashes.size()), Integer.toString(secondHashes.size()));
 
-                if(minuteHash != null) {
-                    HashRecord hashData = createHashData(minuteHash, hourHash, entry);
-                    hashedData.add(hashData);
+                    System.out.println(hashEntry);
+                    hashedData.add(hashEntry);
                 }
             }
 
@@ -58,45 +59,56 @@ public class Hasher {
         return null;
     }
 
-    public byte[] createEntryHash(byte[] data) throws NoSuchAlgorithmException {
+    public String createEntryHash(String data) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
-        digest.update(data);
-        return digest.digest();
+        byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+        return HexFormat.of().formatHex(hash);
     }
 
-    private byte[] createHourHash(long timestamp) throws NoSuchAlgorithmException {
+
+    public String createHourHash(long timestamp) throws NoSuchAlgorithmException {
         if(timestamp % (interval * 60L) == 0) {
-            byte[] hourHash = this.createHashTree(this.minuteHashes);
+            System.out.println("--------------------------------------------------------------------------------");
+            System.out.println("Minute Hashes");
+            for(String minHash : minuteHashes) {
+                System.out.println(LocalDateTime.now().format(FORMATTER) + ": " + minHash);
+            }
+            System.out.println("--------------------------------------------------------------------------------");
+            String hourHash = this.createHashTree(minuteHashes);
             this.minuteHashes.clear();
             return hourHash;
         } else {
-            return null;
+            return "";
         }
     }
 
-    private byte[] createMinuteHash(long timestamp) throws NoSuchAlgorithmException {
+    public String createMinuteHash(long timestamp) throws NoSuchAlgorithmException {
         if(timestamp % 60 == 0) {
-            byte[] minuteHash = this.createHashTree(secondHashes);
-            minuteHashes.add(minuteHash);
+            String minuteHash = this.createHashTree(secondHashes);
+            if(!minuteHashes.contains(minuteHash)) {
+                minuteHashes.add(minuteHash);
+            }
             secondHashes.clear();
             return minuteHash;
         } else {
-            return null;
+            return "";
         }
     }
 
-    private byte[] createHashTree(List<byte[]> data) throws NoSuchAlgorithmException {
+    private String createHashTree(List<String> data) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
-        for (byte[] row : data) {
-            digest.update(row);
+        for (String row : data) {
+            byte[] entryBytes = row.getBytes(StandardCharsets.UTF_8);
+            digest.update(entryBytes);
         }
-        return digest.digest();
+        return HexFormat.of().formatHex(digest.digest());
     }
 
-    private HashRecord createHashData(byte[] minuteHash, byte[] hourHash, ServerRecord entry) {
-        String minuteHex = HexFormat.of().formatHex(minuteHash);
-        String hourHex = hourHash == null ? "" : HexFormat.of().formatHex(hourHash);
+    public void setMinuteHashes(List<String> hashes) {
+        this.minuteHashes = hashes;
+    }
 
-        return new HashRecord(entry.timestamp(), minuteHex, hourHex);
+    public void setSecondHashes(List<String> hashes) {
+        this.secondHashes = hashes;
     }
 }

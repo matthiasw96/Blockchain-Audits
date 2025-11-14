@@ -18,6 +18,7 @@ public class Verifier {
 
     public boolean verify(List<ServerRecord> serverData) {
         List<HashRecord> hashedData = hasher.hashData(serverData);
+        hashedData.removeFirst();
         List<HashRecord> serverRootHashes = extractRootHashes(hashedData);
         List<String> blockchainRootHashes = blockchainHandler.getBlockchainHashes(serverRootHashes);
 

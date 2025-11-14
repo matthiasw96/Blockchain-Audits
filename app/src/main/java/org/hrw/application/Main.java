@@ -36,7 +36,7 @@ public class Main {
                             .setUri(cfg.hostServer())
                             .setUser(cfg.userServer())
                             .setPass(cfg.passServer())
-                            .setPeriod(cfg.timePeriodSeconds())
+                            .setPeriod(cfg.timePeriodSeconds() + 10)
                             .setFormatter(FORMATTER)
                             .build();
 
@@ -68,6 +68,7 @@ public class Main {
                     databaseAPI.start();
                     ui.setOnStop(() -> {
                         try {
+                            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Stop requested.");
                             scheduler.stop();
                             databaseAPI.close();
                         } catch (Exception ignored) {}

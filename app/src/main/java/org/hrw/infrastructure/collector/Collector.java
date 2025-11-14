@@ -58,6 +58,7 @@ public class Collector {
         String auth = user+ ":" + pass;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
         HttpRequest request = createRequest(encodedAuth);
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Request URI: " + request.uri());
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }

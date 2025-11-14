@@ -43,7 +43,7 @@ public class DatabaseHandler {
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data stored");
         } catch (Exception e) {
-            System.out.println("Connecting to database failed");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + "Connecting to database failed");
             throw e;
         }
     }
@@ -69,14 +69,14 @@ public class DatabaseHandler {
                 """ + columnNames + """
                 \n) \nVALUES
                 """ + values + """
-                ON CONFLICT ("timestamp") DO NOTHING;""";
+                ON CONFLICT (timestamp) DO NOTHING;""";
     }
 
     private String createSelectQuery(long startPoint, long endPoint, String tableName){
         return """
                 SELECT * FROM\s""" + tableName + """
                 \sWHERE "timestamp" >= """ + startPoint + """
-                \sAND "timestamp" < """ + endPoint + """
+                \sAND "timestamp" <= """ + endPoint + """
                 """;
     }
 
