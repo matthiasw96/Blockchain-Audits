@@ -57,7 +57,7 @@ public class AnchorService {
         try{
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring Data");
 
-            DataEntry entry = new StringEntry(rootHash.timestamp(), rootHash.hourHash());
+            DataEntry entry = new StringEntry(rootHash.timestamp(), rootHash.rootHash());
             DataTransaction transaction = createTransaction(entry);
             node.broadcast(transaction);
 

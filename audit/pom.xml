@@ -25,7 +25,6 @@
             <groupId>org.hrw</groupId>
             <artifactId>core</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
@@ -35,6 +34,16 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.16.1</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>1.3.30</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>2.0.30</version>
         </dependency>
     </dependencies>
 </project>

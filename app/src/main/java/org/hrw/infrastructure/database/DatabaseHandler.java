@@ -1,7 +1,7 @@
 package org.hrw.infrastructure.database;
 
 import org.hrw.datamodels.Datastructure;
-import org.hrw.datamodels.Mapper;
+import org.hrw.mapping.Mapper;
 import org.hrw.datamodels.ServerRecord;
 
 import java.sql.*;
@@ -30,7 +30,7 @@ public class DatabaseHandler {
         Statement statement = createStatement();
         String query = createSelectQuery(startPoint, endPoint, tableName);
         ResultSet resultSet = statement.executeQuery(query);
-        return this.mapper.resultSetToServerData(resultSet);
+        return this.mapper.resultSetToServerRecord(resultSet);
     }
 
     public void writeToDatabase(List<? extends Datastructure> data, String tableName) throws SQLException {

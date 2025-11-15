@@ -4,9 +4,7 @@ public record HashRecord(
         String timestamp,
         String secondHash,
         String minuteHash,
-        String hourHash,
-        String debug,
-        String debug2
+        String rootHash
 ) implements Datastructure {
 
     @Override
@@ -14,9 +12,7 @@ public record HashRecord(
         return "timestamp," +
                 "secondHash," +
                 "minuteHash," +
-                "hourHash," +
-                "debug, " +
-                "debug2";
+                "rootHash";
     }
 
     @Override
@@ -24,8 +20,6 @@ public record HashRecord(
         return timestamp + ",'" +
                 secondHash + "','" +
                 minuteHash + "','" +
-                hourHash + "','" +
-                debug + "','" +
-                debug2 + "'";
+                rootHash + "'";
     }
 }

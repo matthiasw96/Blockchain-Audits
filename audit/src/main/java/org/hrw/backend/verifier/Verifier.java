@@ -27,11 +27,8 @@ public class Verifier {
 
     private boolean checkHashes(List<HashRecord> serverRootHashes, List<String> blockchainRootHashes) {
         for(int i=0; i<serverRootHashes.size(); i++) {
-            String serverHash = serverRootHashes.get(i).hourHash();
+            String serverHash = serverRootHashes.get(i).rootHash();
             String blockchainHash = blockchainRootHashes.get(i);
-
-            System.out.println("server hash: " + serverHash);
-            System.out.println("blockchain hash: " + blockchainHash);
 
             if(!serverHash.equals(blockchainHash)) {
                 return false;
@@ -43,8 +40,8 @@ public class Verifier {
     private List<HashRecord> extractRootHashes(List<HashRecord> hashedData) {
         List<HashRecord> rootHashes = new ArrayList<>();
         for (HashRecord hashData : hashedData) {
-            if(!hashData.hourHash().isEmpty()) {
-                System.out.println(hashData.timestamp() + ": " + hashData.hourHash());
+            if(!hashData.rootHash().isEmpty()) {
+                System.out.println(hashData.timestamp() + ": " + hashData.rootHash());
                 rootHashes.add(hashData);
             }
         }

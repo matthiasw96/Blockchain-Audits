@@ -1,6 +1,6 @@
 package org.hrw.infrastructure.collector;
 
-import org.hrw.datamodels.Mapper;
+import org.hrw.mapping.Mapper;
 import org.hrw.datamodels.ServerRecord;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -43,7 +43,7 @@ public class Collector {
 
             String rawData = getServerData();
             Document xmlDoc = buildXmlDoc(rawData);
-            List<ServerRecord> serverData = mapper.xmlToServerData(xmlDoc);
+            List<ServerRecord> serverData = mapper.xmlToServerRecord(xmlDoc);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data received");
             return serverData;

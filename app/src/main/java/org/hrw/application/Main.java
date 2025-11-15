@@ -40,7 +40,7 @@ public class Main {
                             .setFormatter(FORMATTER)
                             .build();
 
-                    Hasher hasher = new Hasher(cfg.hasherAlgorithm(), cfg.intervalAnchor());
+                    Hasher hasher = new Hasher(cfg.intervalAnchor());
 
                     Network selected = Network.parse(cfg.environmentAnchor());
 

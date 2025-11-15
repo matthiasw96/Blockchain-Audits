@@ -25,9 +25,6 @@ public class UserInterface extends JFrame {
     private final JTextField userDb = new JTextField("postgres");
     private final JPasswordField passDb = new JPasswordField();
 
-    // Hasher
-    private final JTextField hasherAlgorithm = new JTextField("SHA-256");
-
     // Anchor Service
     private final String[] options = {"TESTNET","STAGENET","MAINNET"};
     private final JTextField seedPhraseAnchor = new JTextField();
@@ -70,9 +67,6 @@ public class UserInterface extends JFrame {
         row = addRow(content, g, row, "Host Database", hostDb);
         row = addRow(content, g, row, "User Database", userDb);
         row = addRow(content, g, row, "Pass Database", passDb);
-
-        row = sectionLabel(content, g, row, "Hasher");
-        row = addRow(content, g, row, "Hashing Algorithm", hasherAlgorithm);
 
         row = sectionLabel(content, g, row, "Anchor Service");
         row = addRow(content, g, row, "Seed Phrase Anchor", seedPhraseAnchor);
@@ -144,8 +138,6 @@ public class UserInterface extends JFrame {
         String uDb = reqText(userDb, "User Database");
         String pDbPass = new String(passDb.getPassword());
 
-        String algorithm = reqText(hasherAlgorithm, "Hashing Algorithm");
-
         String seedPhrase = reqText(seedPhraseAnchor, "Seed Phrase Anchor");
         String environment = environmentAnchor.getSelectedItem().toString();
         int interval = ((Number) intervalAnchor.getValue()).intValue();
@@ -154,7 +146,7 @@ public class UserInterface extends JFrame {
         Date first = (Date) dateOfFirstExecution.getValue();
 
         if (period <= 0) throw new IllegalArgumentException("Time period must be > 0 seconds");
-        return new Config(hostSrv, userSrv, passSrv, hDb, uDb, pDbPass, seedPhrase, environment, algorithm,
+        return new Config(hostSrv, userSrv, passSrv, hDb, uDb, pDbPass, seedPhrase, environment,
                 period, first, interval);
     }
 
@@ -211,10 +203,9 @@ public class UserInterface extends JFrame {
         return field;
     }
 
-    // Simple container for the collected config
     public record Config(
             String hostServer, String userServer, String passServer,
-            String hostDb, String userDb, String passDb, String seedPhraseAnchor, String environmentAnchor, String hasherAlgorithm,
+            String hostDb, String userDb, String passDb, String seedPhraseAnchor, String environmentAnchor,
             int timePeriodSeconds, Date dateOfFirstExecution, int intervalAnchor
     ) {
     }
@@ -223,12 +214,11 @@ public class UserInterface extends JFrame {
     public void setOnStop(Runnable handler) { this.onStop = handler; }
 
     private Config readConfigFromFields() {
-        // read values from your text fields (example names)
         return new Config(
                 hostServer.getText(), userServer.getText(), new String(passServer.getPassword()),
                 hostDb.getText(), userDb.getText(),
                 new String(passDb.getPassword()), seedPhraseAnchor.getText(),
-                environmentAnchor.getSelectedItem().toString(), hasherAlgorithm.getText(), ((Number) timePeriod.getValue()).intValue(),
+                environmentAnchor.getSelectedItem().toString(),((Number) timePeriod.getValue()).intValue(),
                 (Date) dateOfFirstExecution.getValue(), ((Number) intervalAnchor.getValue()).intValue()
         );
     }

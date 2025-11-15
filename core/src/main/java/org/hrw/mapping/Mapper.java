@@ -1,9 +1,11 @@
-package org.hrw.datamodels;
+package org.hrw.mapping;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import org.hrw.datamodels.ServerRecord;
+import org.hrw.datamodels.VMRecord;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -16,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -60,7 +63,7 @@ public class Mapper {
         return serverMap;
     }
 
-    public List<ServerRecord> resultSetToServerData(ResultSet resultSet) throws SQLException {
+    public List<ServerRecord> resultSetToServerRecord(ResultSet resultSet) throws SQLException {
         List<ServerRecord> serverData = new ArrayList<>();
 
         while (resultSet.next()) {
@@ -106,7 +109,7 @@ public class Mapper {
         );
     }
 
-    public List<ServerRecord> xmlToServerData(Document xmlDoc) throws XPathExpressionException {
+    public List<ServerRecord> xmlToServerRecord(Document xmlDoc) throws XPathExpressionException {
         XPath xPath = XPathFactory.newInstance().newXPath();
         Node data = (Node) xPath.evaluate("//data", xmlDoc, XPathConstants.NODE);
         NodeList rows = data.getChildNodes();
@@ -207,4 +210,15 @@ public class Mapper {
 
         return serverData;
     }
+
+    public byte[] serverRecordToCsv(List<ServerRecord> filteredData) {
+        String csv = filteredData.getFirst().getAttributeNames() + "\n";
+
+        for(ServerRecord record : filteredData) {
+            csv += record.toString() + "\n";
+        }
+
+        return csv.replaceAll(",",";").getBytes(StandardCharsets.UTF_8);
+    }
+
 }

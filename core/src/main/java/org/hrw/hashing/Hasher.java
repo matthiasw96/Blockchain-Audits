@@ -12,17 +12,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Hasher {
-    private final String algorithm;
     private List<String> secondHashes;
     private List<String> minuteHashes;
     private final DateTimeFormatter FORMATTER;
     private final int interval;
 
-    public Hasher(String algorithm, int interval) {
-        this.algorithm = algorithm;
+    public Hasher(int interval) {
         this.secondHashes = new ArrayList<>();
         this.minuteHashes = new ArrayList<>();
-        this.FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+        this.FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         this.interval = interval;
     }
 
@@ -39,10 +37,10 @@ public class Hasher {
 
                 if(!secondHashes.contains(secondHash)) {
                     String minuteHash = createMinuteHash(timestamp);
-                    String hourHash = createHourHash(timestamp);
+                    String rootHash = createRootHash(timestamp);
                     secondHashes.add(secondHash);
 
-                    HashRecord hashEntry = new HashRecord(entry.timestamp(), secondHash, minuteHash, hourHash, Integer.toString(minuteHashes.size()), Integer.toString(secondHashes.size()));
+                    HashRecord hashEntry = new HashRecord(entry.timestamp(), secondHash, minuteHash, rootHash);
 
                     System.out.println(hashEntry);
                     hashedData.add(hashEntry);
@@ -60,23 +58,17 @@ public class Hasher {
     }
 
     public String createEntryHash(String data) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance(algorithm);
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
         return HexFormat.of().formatHex(hash);
     }
 
 
-    public String createHourHash(long timestamp) throws NoSuchAlgorithmException {
+    public String createRootHash(long timestamp) throws NoSuchAlgorithmException {
         if(timestamp % (interval * 60L) == 0) {
-            System.out.println("--------------------------------------------------------------------------------");
-            System.out.println("Minute Hashes");
-            for(String minHash : minuteHashes) {
-                System.out.println(LocalDateTime.now().format(FORMATTER) + ": " + minHash);
-            }
-            System.out.println("--------------------------------------------------------------------------------");
-            String hourHash = this.createHashTree(minuteHashes);
+            String rootHash = this.createHashTree(minuteHashes);
             this.minuteHashes.clear();
-            return hourHash;
+            return rootHash;
         } else {
             return "";
         }
@@ -96,19 +88,11 @@ public class Hasher {
     }
 
     private String createHashTree(List<String> data) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance(algorithm);
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
         for (String row : data) {
             byte[] entryBytes = row.getBytes(StandardCharsets.UTF_8);
             digest.update(entryBytes);
         }
         return HexFormat.of().formatHex(digest.digest());
-    }
-
-    public void setMinuteHashes(List<String> hashes) {
-        this.minuteHashes = hashes;
-    }
-
-    public void setSecondHashes(List<String> hashes) {
-        this.secondHashes = hashes;
     }
 }
