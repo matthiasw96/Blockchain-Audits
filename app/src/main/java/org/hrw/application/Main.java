@@ -10,7 +10,6 @@ import org.hrw.userInterface.UserInterface;
 
 import javax.swing.*;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 public class Main {
@@ -36,11 +35,11 @@ public class Main {
                             .setUri(cfg.hostServer())
                             .setUser(cfg.userServer())
                             .setPass(cfg.passServer())
-                            .setPeriod(cfg.timePeriodSeconds() + 10)
+                            .setPeriod(310)
                             .setFormatter(FORMATTER)
                             .build();
 
-                    Hasher hasher = new Hasher(cfg.intervalAnchor());
+                    Hasher hasher = new Hasher(30, FORMATTER);
 
                     Network selected = Network.parse(cfg.environmentAnchor());
 
@@ -49,7 +48,7 @@ public class Main {
                             .setNode(selected.getNodeUri())
                             .setNetworkChainId(selected.getChainId())
                             .setFormatter(FORMATTER)
-                            .setInterval(cfg.intervalAnchor())
+                            .setInterval(30)
                             .build();
 
                     Processor processor = new Processor.ProcessorBuilder()
@@ -60,9 +59,9 @@ public class Main {
                             .setFormatter(FORMATTER)
                             .build();
 
-                    Scheduler scheduler = new Scheduler(processor, cfg.timePeriodSeconds());
+                    Scheduler scheduler = new Scheduler(processor, 300);
 
-                    DatabaseAPI databaseAPI = new DatabaseAPI(8080, dbHandler, ZoneId.of("Europe/Berlin"));
+                    DatabaseAPI databaseAPI = new DatabaseAPI(8080, dbHandler);
 
                     scheduler.executeTimer(cfg.dateOfFirstExecution());
                     databaseAPI.start();

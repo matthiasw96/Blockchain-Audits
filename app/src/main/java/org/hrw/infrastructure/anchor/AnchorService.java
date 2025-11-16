@@ -25,22 +25,12 @@ public class AnchorService {
     private final DateTimeFormatter FORMATTER;
     private final int interval;
 
-
     public AnchorService(AnchorServiceBuilder builder) {
         this.privateKey = builder.privateKey;
         this.networkChainId = builder.networkChainId;
         this.node = builder.node;
         this.FORMATTER = builder.FORMATTER;
         this.interval = builder.interval;
-    }
-
-    private DataTransaction createTransaction(DataEntry entry) {
-        return DataTransaction.
-                builder(Collections.singletonList(entry))
-                .fee(0)
-                .timestamp(Instant.now().toEpochMilli())
-                .chainId(networkChainId)
-                .getSignedWith(privateKey);
     }
 
     public void anchorData(List<HashRecord> hashedData) {
@@ -66,6 +56,15 @@ public class AnchorService {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring data failed");
             e.printStackTrace();
         }
+    }
+
+    private DataTransaction createTransaction(DataEntry entry) {
+        return DataTransaction.
+                builder(Collections.singletonList(entry))
+                .fee(0)
+                .timestamp(Instant.now().toEpochMilli())
+                .chainId(networkChainId)
+                .getSignedWith(privateKey);
     }
 
     public static class AnchorServiceBuilder {

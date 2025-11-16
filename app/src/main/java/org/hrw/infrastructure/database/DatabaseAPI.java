@@ -23,12 +23,12 @@ public class DatabaseAPI implements AutoCloseable {
     private Gson gson;
     private ZoneId zoneId;
 
-    public DatabaseAPI(int port, DatabaseHandler db, ZoneId zoneId) throws IOException {
+    public DatabaseAPI(int port, DatabaseHandler db) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newSingleThreadExecutor());
         this.db = db;
         this.gson = new Gson();
-        this.zoneId = zoneId;
+        this.zoneId = ZoneId.of("Europe/Berlin");
         createContexts();
     }
 
@@ -50,6 +50,8 @@ public class DatabaseAPI implements AutoCloseable {
             respond(exchange, 200, jsonData(serverData));
         } catch (SQLException e) {
             respond(exchange, 500, jsonError("Internal Server Error","SQL Exception. Error reaching database"));
+        } finally {
+            exchange.close();
         }
     }
 

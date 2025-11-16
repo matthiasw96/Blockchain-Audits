@@ -17,21 +17,19 @@ public class Hasher {
     private final DateTimeFormatter FORMATTER;
     private final int interval;
 
-    public Hasher(int interval) {
+    public Hasher(int interval, DateTimeFormatter FORMATTER) {
         this.secondHashes = new ArrayList<>();
         this.minuteHashes = new ArrayList<>();
-        this.FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        this.FORMATTER = FORMATTER;
         this.interval = interval;
     }
 
     public List<HashRecord> hashData(List<ServerRecord> data) {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data");
+        List<HashRecord> hashedData = new ArrayList<>();
+
         try {
-            List<HashRecord> hashedData = new ArrayList<>();
-            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data Size: " + data.size());
-
             for(ServerRecord entry : data) {
-
                 long timestamp = Long.parseLong(entry.timestamp());
                 String secondHash = createEntryHash(entry.toString());
 
@@ -42,13 +40,11 @@ public class Hasher {
 
                     HashRecord hashEntry = new HashRecord(entry.timestamp(), secondHash, minuteHash, rootHash);
 
-                    System.out.println(hashEntry);
                     hashedData.add(hashEntry);
                 }
             }
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Hashing data completed");
-
             return hashedData;
         } catch (Exception e) {
             System.out.println("Hashing failed");

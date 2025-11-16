@@ -2,45 +2,35 @@ package org.hrw.userInterface;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Consumer;
 
 public class UserInterface extends JFrame {
-    private Consumer<Config> onStart;   // callback for Start
-    private Runnable onStop;            // callback for Stop
+    private Consumer<Config> onStart;
+    private Runnable onStop;
 
-    // Server
     private final JTextField hostServer = new JTextField("192.168.250.55");
     private final JTextField userServer = new JTextField("root");
     private final JPasswordField passServer = new JPasswordField();
 
-    // DB
     private final JTextField hostDb = new JTextField("192.168.250.51");
     private final JTextField userDb = new JTextField("postgres");
     private final JPasswordField passDb = new JPasswordField();
 
-    // Anchor Service
     private final String[] options = {"TESTNET","STAGENET","MAINNET"};
     private final JTextField seedPhraseAnchor = new JTextField();
     private final JComboBox<String> environmentAnchor = new JComboBox<>(options);
-    private final JFormattedTextField intervalAnchor = intField(60);
 
-    // Scheduling
-    private final JFormattedTextField timePeriod = intField(60); // seconds
     private final JFormattedTextField dateOfFirstExecution = dateTimeField();
 
-    // Buttons
     private final JButton startBtn = new JButton("Start");
     private final JButton stopBtn = new JButton("Stop");
     private final JButton logViewerBtn = new JButton("Log Viewer");
 
-    // Status
     private final JLabel status = new JLabel("Idle");
 
     public UserInterface() {
@@ -71,10 +61,8 @@ public class UserInterface extends JFrame {
         row = sectionLabel(content, g, row, "Anchor Service");
         row = addRow(content, g, row, "Seed Phrase Anchor", seedPhraseAnchor);
         row = addRow(content, g, row, "Environment Anchor", environmentAnchor);
-        row = addRow(content, g, row, "Interval Anchor (min)", intervalAnchor);
 
         row = sectionLabel(content, g, row, "Schedule");
-        row = addRow(content, g, row, "Time Period (s)", timePeriod);
         row = addRow(content, g, row, "Date Of First Execution (yyyy-MM-dd HH:mm:ss)", dateOfFirstExecution);
 
         add(content, BorderLayout.CENTER);
@@ -103,7 +91,7 @@ public class UserInterface extends JFrame {
     private void onStart(ActionEvent e) {
         try {
             Config cfg = readConfig();
-            status.setText("Running (every " + cfg.timePeriodSeconds + " s)");
+            status.setText("Running (every 5 minutes)");
             startBtn.setEnabled(false);
             stopBtn.setEnabled(true);
             this.onStart.accept(cfg);
@@ -122,7 +110,7 @@ public class UserInterface extends JFrame {
     private void onOpenLogViewer(ActionEvent e) {
         JDialog dlg = new JDialog(this, "Console Output", false);
         ConsolePanel console = new ConsolePanel();
-        console.hookSystemStreams(); // redirect System.out/err to the panel
+        console.hookSystemStreams();
         dlg.setContentPane(console);
         dlg.pack();
         dlg.setLocationRelativeTo(this);
@@ -140,14 +128,10 @@ public class UserInterface extends JFrame {
 
         String seedPhrase = reqText(seedPhraseAnchor, "Seed Phrase Anchor");
         String environment = environmentAnchor.getSelectedItem().toString();
-        int interval = ((Number) intervalAnchor.getValue()).intValue();
 
-        int period = ((Number) timePeriod.getValue()).intValue();
         Date first = (Date) dateOfFirstExecution.getValue();
 
-        if (period <= 0) throw new IllegalArgumentException("Time period must be > 0 seconds");
-        return new Config(hostSrv, userSrv, passSrv, hDb, uDb, pDbPass, seedPhrase, environment,
-                period, first, interval);
+        return new Config(hostSrv, userSrv, passSrv, hDb, uDb, pDbPass, seedPhrase, environment, first);
     }
 
     private static String reqText(JTextField field, String name) {
@@ -169,19 +153,6 @@ public class UserInterface extends JFrame {
         panel.add(lbl, g);
         g.gridwidth = 1;
         return row + 1;
-    }
-
-    private static JFormattedTextField intField(int defaultValue) {
-        NumberFormat format = NumberFormat.getIntegerInstance();
-        format.setGroupingUsed(false);
-        NumberFormatter formatter = new NumberFormatter(format);
-        formatter.setValueClass(Integer.class);
-        formatter.setMinimum(0);
-        formatter.setMaximum(Integer.MAX_VALUE);
-        formatter.setAllowsInvalid(false);
-        JFormattedTextField field = new JFormattedTextField(formatter);
-        field.setValue(defaultValue);
-        return field;
     }
 
     private static JFormattedTextField dateTimeField() {
@@ -206,20 +177,10 @@ public class UserInterface extends JFrame {
     public record Config(
             String hostServer, String userServer, String passServer,
             String hostDb, String userDb, String passDb, String seedPhraseAnchor, String environmentAnchor,
-            int timePeriodSeconds, Date dateOfFirstExecution, int intervalAnchor
+            Date dateOfFirstExecution
     ) {
     }
 
     public void setOnStart(Consumer<Config> handler) { this.onStart = handler; }
     public void setOnStop(Runnable handler) { this.onStop = handler; }
-
-    private Config readConfigFromFields() {
-        return new Config(
-                hostServer.getText(), userServer.getText(), new String(passServer.getPassword()),
-                hostDb.getText(), userDb.getText(),
-                new String(passDb.getPassword()), seedPhraseAnchor.getText(),
-                environmentAnchor.getSelectedItem().toString(),((Number) timePeriod.getValue()).intValue(),
-                (Date) dateOfFirstExecution.getValue(), ((Number) intervalAnchor.getValue()).intValue()
-        );
-    }
 }

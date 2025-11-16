@@ -11,7 +11,7 @@ import org.hrw.backend.verifier.BlockchainHandler;
 import org.hrw.backend.verifier.Verifier;
 import org.hrw.datamodels.ServerRecord;
 import org.hrw.hashing.Hasher;
-import org.hrw.mapping.Mapper;
+import org.hrw.mapping.Converter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,26 +21,30 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class AuditAPI implements AutoCloseable {
     private HttpServer server;
     private DataCollector dataCollector;
     private Verifier verifier;
-    private Mapper mapper;
+    private Converter converter;
     private Gson gson;
     private ZonedDateTime startDate;
     private ZonedDateTime endDate;
     private boolean isVerified;
     private List<ServerRecord> data;
     private AuditPdfCreator pdfCreator;
+    private DateTimeFormatter FORMATTER;
 
-    public AuditAPI() throws IOException {
+    public AuditAPI(DateTimeFormatter FORMATTER) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(8000), 0);
-        this.mapper = new Mapper();
+        this.FORMATTER = FORMATTER;
+        this.converter = new Converter();
         this.gson = new Gson();
-        this.pdfCreator = new AuditPdfCreator();
+        this.pdfCreator = new AuditPdfCreator(FORMATTER);
         createContexts();
+        System.out.println("Server started at localhost:8000");
     }
 
     private void createContexts() {
@@ -52,58 +56,23 @@ public class AuditAPI implements AutoCloseable {
         server.createContext("/downloadReport", this::handleDownloadReport);
     }
 
-    private void handleStatic(HttpExchange exchange) throws IOException {
-        String method = exchange.getRequestMethod();
-        if (!"GET".equalsIgnoreCase(method)) {
-            exchange.sendResponseHeaders(405, -1);
-            exchange.close();
-            return;
-        }
-
-        String path = exchange.getRequestURI().getPath();
-
-        if (path.equals("/")) {
-            path = "/index.html";
-        }
-
-        String resourceName = path.startsWith("/") ? path.substring(1) : path;
+    private void handleStatic(HttpExchange httpExchange) throws IOException {
+        String resourceName = httpExchange.getRequestURI().getPath().substring(1);
 
         InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName);
 
-        if (is == null) {
-            // Datei existiert nicht
-            String msg = "Not found: " + resourceName;
-            byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
-            exchange.sendResponseHeaders(404, bytes.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
-            }
-            return;
-        }
-
+        assert is != null;
         byte[] bytes = is.readAllBytes();
         String contentType = guessContentType(resourceName);
 
-        exchange.getResponseHeaders().set("Content-Type", contentType);
-        exchange.sendResponseHeaders(200, bytes.length);
-
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
-
+        respond(httpExchange, contentType, 200, bytes);
         is.close();
-        exchange.close();
-    }
-
-    private String guessContentType(String resourceName) {
-        if (resourceName.endsWith(".html")) return "text/html; charset=utf-8";
-        if (resourceName.endsWith(".css"))  return "text/css; charset=utf-8";
-        if (resourceName.endsWith(".js"))   return "application/javascript; charset=utf-8";
-        return "application/octet-stream";
+        httpExchange.close();
     }
 
     private void handleSetup(HttpExchange httpExchange) throws IOException {
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Setting up backend");
+
         String body = readRequestBody(httpExchange);
         JsonObject json = gson.fromJson(body, JsonObject.class);
 
@@ -113,9 +82,14 @@ public class AuditAPI implements AutoCloseable {
 
         setup(bhUri, bhAddress, collectorUri);
         respond(httpExchange, "application/json", 200, jsonResponse("OK", "Setup completed"));
+        httpExchange.close();
+
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Backend set");
     }
 
     private void handleSelectData(HttpExchange httpExchange) throws IOException {
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Selecting Data");
+
         String query = httpExchange.getRequestURI().getQuery();
         String start = query.split("&")[0].split("=")[1];
         String end = query.split("&")[1].split("=")[1];
@@ -125,27 +99,57 @@ public class AuditAPI implements AutoCloseable {
             endDate = LocalDateTime.parse(end).atZone(ZoneId.of("Europe/Berlin"));
 
             data = dataCollector.getServerData(startDate, endDate);
-            respond(httpExchange, "application/json", 200, jsonResponse("OK", "Data retrieved"));
+            if(!data.isEmpty()) {
+                respond(httpExchange, "application/json", 200, jsonResponse("OK", "Data retrieved"));
+            } else {
+                respond(httpExchange, "application/json", 200, jsonResponse("ERROR", "No data found"));
+            }
+
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data selection completed");
         } catch (InterruptedException e) {
             respond(httpExchange, "application/json", 500, jsonResponse("Internal Server Error","Error reaching database"));
+        } finally {
+            httpExchange.close();
         }
     }
 
     private void handleVerifyData(HttpExchange httpExchange) throws IOException {
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Verifying data");
+
         isVerified = verifier.verify(data);
         respond(httpExchange, "application/json", 200, jsonResponse("OK", Boolean.toString(isVerified)));
+        httpExchange.close();
+
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Verification completed");
     }
 
     private void handleDownloadData(HttpExchange httpExchange) throws IOException {
-        List<ServerRecord> filteredData = filterData();
-        byte[] csvData = mapper.serverRecordToCsv(filteredData);
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Downloading data");
+
+        data = filterData();
+        byte[] csvData = converter.serverRecordToCsv(data);
         respond(httpExchange, "text/csv", 200, csvData);
+        httpExchange.close();
+
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Download completed");
     }
 
     private void handleDownloadReport(HttpExchange httpExchange) throws IOException {
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Downloading report");
+
+        data = filterData();
         AuditSummary summary = createSummary();
         byte[] doc = pdfCreator.generateReport(data, summary);
         respond(httpExchange, doc);
+        httpExchange.close();
+
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Download completed");
+    }
+    private String guessContentType(String resourceName) {
+        if (resourceName.endsWith(".html")) return "text/html; charset=utf-8";
+        if (resourceName.endsWith(".css"))  return "text/css; charset=utf-8";
+        if (resourceName.endsWith(".js"))   return "application/javascript; charset=utf-8";
+        return "application/octet-stream";
     }
 
     private String readRequestBody(HttpExchange exchange) throws IOException {
@@ -155,10 +159,10 @@ public class AuditAPI implements AutoCloseable {
     }
 
     private void setup(String bhUri, String bhAddress, String collectorUri) {
-        dataCollector = new DataCollector(collectorUri, mapper);
-        BlockchainHandler handler = new BlockchainHandler(bhUri, bhAddress);
-        Hasher hasher = new Hasher(30);
-        verifier = new Verifier(hasher, handler);
+        dataCollector = new DataCollector(collectorUri, converter, FORMATTER);
+        BlockchainHandler handler = new BlockchainHandler(bhUri, bhAddress, FORMATTER);
+        Hasher hasher = new Hasher(30, FORMATTER);
+        verifier = new Verifier(hasher, handler, FORMATTER);
     }
 
     private AuditSummary createSummary() {

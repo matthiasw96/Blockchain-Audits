@@ -1,7 +1,7 @@
 package org.hrw.infrastructure.database;
 
 import org.hrw.datamodels.Datastructure;
-import org.hrw.mapping.Mapper;
+import org.hrw.mapping.Converter;
 import org.hrw.datamodels.ServerRecord;
 
 import java.sql.*;
@@ -13,7 +13,7 @@ public class DatabaseHandler {
     private final String hostAddress;
     private final String username;
     private final String password;
-    private final Mapper mapper;
+    private final Converter converter;
     private final DateTimeFormatter FORMATTER;
 
     public DatabaseHandler(DatabaseHandlerBuilder builder) {
@@ -21,21 +21,24 @@ public class DatabaseHandler {
         this.username = builder.username;
         this.password = builder.password;
         this.FORMATTER = builder.FORMATTER;
-        this.mapper = new Mapper();
+        this.converter = new Converter();
     }
 
     public List<ServerRecord> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
-        System.out.println(LocalDateTime.now().format(FORMATTER) + "Reading from database...");
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Reading from database");
 
         Statement statement = createStatement();
         String query = createSelectQuery(startPoint, endPoint, tableName);
         ResultSet resultSet = statement.executeQuery(query);
-        return this.mapper.resultSetToServerRecord(resultSet);
+        List<ServerRecord> records = converter.resultSetToServerRecord(resultSet);
+
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data received");
+        return records;
     }
 
     public void writeToDatabase(List<? extends Datastructure> data, String tableName) throws SQLException {
         try {
-            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database...");
+            System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database");
 
             Statement statement = createStatement();
             String query = createInsertQuery(data, tableName);

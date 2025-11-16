@@ -16,31 +16,33 @@
         <section class="card">
             <h2>Connection</h2>
 
-            <label class="row">
-                <span>Enter Host Address</span>
-                <input id="host" class="text" type="text">
-            </label>
+            <form id="setupForm" method="post">
+                <label class="row">
+                    <span>Enter Host Address</span>
+                    <input id="host" class="text" type="text" required/>
+                </label>
 
-            <label class="row">
-                <span>Enter Waves Address</span>
-                <input id="wavesAddress" class="text" type="text">
-            </label>
+                <label class="row">
+                    <span>Enter Waves Address</span>
+                    <input id="wavesAddress" class="text" type="text" required/>
+                </label>
 
-            <label class="row">
-                <span>Select Waves Network</span>
-                <select id="wavesNet" class="select">
-                    <option value="nodes-testnet.wavesnodes.com" selected>Testnet</option>
-                    <option value="nodes-stagenet.wavesnodes.com">Stagenet</option>
-                    <option value="nodes.wavesnodes.com">Mainnet</option>
-                </select>
-            </label>
+                <label class="row">
+                    <span>Select Waves Network</span>
+                    <select id="wavesNet" class="select">
+                        <option value="nodes-testnet.wavesnodes.com" selected>Testnet</option>
+                        <option value="nodes-stagenet.wavesnodes.com">Stagenet</option>
+                        <option value="nodes.wavesnodes.com">Mainnet</option>
+                    </select>
+                </label>
 
-            <div class="actions">
-                <button id="btnSubmit" type="submit" class="btn primary">Submit</button>
-                <span id="submitStatus" class="status" aria-live="polite"></span>
-            </div>
-
+                <div class="actions">
+                    <button id="btnSubmit" type="submit" class="btn primary">Submit</button>
+                    <span id="submitStatus" class="status" aria-live="polite"></span>
+                </div>
+            </form>
         </section>
+
         <section class="card">
             <h2>Data Selection</h2>
 
@@ -75,6 +77,7 @@
                 </div>
             </form>
         </section>
+
         <section class="card">
             <h2>Audit Report</h2>
             <div class="actions">
@@ -103,8 +106,6 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="/styles.css" />
     <script src="/app.js" defer></script>
-
     </body>
 </html>

@@ -1,6 +1,6 @@
 package org.hrw.infrastructure.collector;
 
-import org.hrw.mapping.Mapper;
+import org.hrw.mapping.Converter;
 import org.hrw.datamodels.ServerRecord;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -25,7 +25,7 @@ public class Collector {
     private final String pass;
     private final int period;
     private final DateTimeFormatter FORMATTER;
-    private final Mapper mapper;
+    private final Converter converter;
 
     public Collector(CollectorBuilder builder) {
         this.uri = builder.uri;
@@ -34,7 +34,7 @@ public class Collector {
         this.period = builder.period;
         this.client = HttpClient.newHttpClient();
         this.FORMATTER = builder.FORMATTER;
-        this.mapper = new Mapper();
+        this.converter = new Converter();
     }
 
     public List<ServerRecord> fetch(){
@@ -43,7 +43,7 @@ public class Collector {
 
             String rawData = getServerData();
             Document xmlDoc = buildXmlDoc(rawData);
-            List<ServerRecord> serverData = mapper.xmlToServerRecord(xmlDoc);
+            List<ServerRecord> serverData = converter.xmlToServerRecord(xmlDoc);
 
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Data received");
             return serverData;
@@ -58,7 +58,6 @@ public class Collector {
         String auth = user+ ":" + pass;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
         HttpRequest request = createRequest(encodedAuth);
-        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Request URI: " + request.uri());
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }

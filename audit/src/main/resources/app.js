@@ -45,7 +45,6 @@ function init() {
     }
 }
 
-
 async function handleSubmitButton(event, deps) {
     event.preventDefault();
 
@@ -56,12 +55,11 @@ async function handleSubmitButton(event, deps) {
 
         const data = await response.json();
 
-        if (response.ok) {
+        console.log(data)
+
+        if (data.status === "OK") {
             updateStatus(true, "Submitted","submitStatus");
             isConnected = true;
-        } else {
-            console.error("HTTP Fehler:", response.status);
-            updateStatus(false, data.message || "Failed to connect to backend","submitStatus");
         }
     } catch (err) {
         console.error("Setup-Request fehlgeschlagen:", err);
@@ -79,16 +77,19 @@ async function handleApplySubmit(event, deps) {
     try {
         const response = await sendGetRequest(url);
 
-        if(response.ok) {
-            updateStatus(true, "Data received", "applyStatus");
-            hasData = true;
-        } else {
-            updateStatus(false, "Failed to retrieve data", "applyStatus");
-        }
+        const data = await response.json();
 
+        console.log(data)
+
+        if(data.status === "OK") {
+            updateStatus(true, data.message, "applyStatus");
+            hasData = true;
+        } else if(data.code === "ERROR") {
+            updateStatus(false, data.message, "applyStatus");
+        }
     } catch (err) {
         console.error("Data Selection failed:", err);
-        updateStatus(false, "Failed to connect", "applyStatus");
+        updateStatus(false, "Failed to retrieve data", "applyStatus");
     }
 }
 
