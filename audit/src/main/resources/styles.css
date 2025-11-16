@@ -1,4 +1,3 @@
-/* 1) Design Tokens */
 :root {
     --bg: #0b0c10;
     --panel: #121319;
@@ -12,7 +11,6 @@
     "Apple Color Emoji","Segoe UI Emoji";
 }
 
-/* 2) Reset + Basis */
 * {
     box-sizing: border-box;
 }
@@ -34,7 +32,6 @@ body {
     padding: 24px;
 }
 
-/* 3) Layout: Header & Footer */
 .site-header,
 .site-footer {
     border-bottom: 1px solid var(--border);
@@ -58,7 +55,6 @@ body {
     font-size: 1.25rem;
 }
 
-/* 4) Cards */
 .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -67,12 +63,10 @@ body {
     box-shadow: var(--shadow);
 }
 
-/* Abstand zwischen den Cards */
 .card + .card {
     margin-top: 16px;
 }
 
-/* 5) Zeilenlayout für Connection (Label links, Feld rechts) */
 .row {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -81,7 +75,6 @@ body {
     margin-bottom: 12px;
 }
 
-/* 6) Eingabefelder: Text & Select */
 .text,
 .select {
     width: 100%;
@@ -93,7 +86,6 @@ body {
     font: inherit;
 }
 
-/* 7) Buttons */
 .actions {
     margin-top: 16px;
     margin-right: 16px;
@@ -108,18 +100,17 @@ body {
 }
 
 .status--ok {
-    color: #22c55e; /* green-500 */
+    color: #22c55e;
 }
 
 .status--error {
-    color: #f97373; /* red-400 */
+    color: #f97373;
 }
 
 .status:empty {
     display: none;
 }
 
-/* --- Popup Overlay (dunkler Hintergrund) --- */
 .popup-overlay {
     position: fixed;
     top: 0;
@@ -190,7 +181,6 @@ body {
     outline-offset: 2px;
 }
 
-/* 8) Grid für Data Selection */
 .grid {
     display: grid;
     gap: 16px;
@@ -198,7 +188,6 @@ body {
     align-items: end;
 }
 
-/* 9) Fieldsets & Labels in Data Selection */
 .field {
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -222,7 +211,6 @@ body {
     color: var(--muted);
 }
 
-/* 10) Datum/Zeit-Inputs */
 input[type="date"],
 input[type="time"] {
     width: 100%;

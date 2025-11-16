@@ -6,106 +6,105 @@
     <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-
-<header class="site-header">
-    <div class="container">
-        <h1 class="site-title">Audit Dashboard</h1>
-    </div>
-</header>
-
-<main id="content" class="container">
-    <section class="card">
-        <h2>Connection</h2>
-
-        <label class="row">
-            <span>Enter Host Address</span>
-            <input id="host" class="text" type="text">
-        </label>
-
-        <label class="row">
-            <span>Enter Waves Address</span>
-            <input id="wavesAddress" class="text" type="text">
-        </label>
-
-        <label class="row">
-            <span>Select Waves Network</span>
-            <select id="wavesNet" class="select">
-                <option value="nodes-testnet.wavesnodes.com" selected>Testnet</option>
-                <option value="nodes-stagenet.wavesnodes.com">Stagenet</option>
-                <option value="nodes.wavesnodes.com">Mainnet</option>
-            </select>
-        </label>
-
-        <div class="actions">
-            <button id="btnSubmit" type="submit" class="btn primary">Submit</button>
-            <span id="submitStatus" class="status" aria-live="polite"></span>
+    <header class="site-header">
+        <div class="container">
+            <h1 class="site-title">Audit Dashboard</h1>
         </div>
+    </header>
 
-    </section>
-    <section class="card">
-        <h2>Data Selection</h2>
+    <main id="content" class="container">
+        <section class="card">
+            <h2>Connection</h2>
 
-        <form id="rangeForm" class="grid">
-            <fieldset class="field">
-                <legend>Start</legend>
-                <label>
-                    <span class="lbl">Date</span>
-                    <input id="startDate" type="date" required />
-                </label>
-                <label>
-                    <span class="lbl">Time</span>
-                    <input id="startTime" type="time" required step="60" />
-                </label>
-            </fieldset>
+            <label class="row">
+                <span>Enter Host Address</span>
+                <input id="host" class="text" type="text">
+            </label>
 
-            <fieldset class="field">
-                <legend>End</legend>
-                <label>
-                    <span class="lbl">Date</span>
-                    <input id="endDate" type="date" required />
-                </label>
-                <label>
-                    <span class="lbl">Time</span>
-                    <input id="endTime" type="time" required step="60" />
-                </label>
-            </fieldset>
+            <label class="row">
+                <span>Enter Waves Address</span>
+                <input id="wavesAddress" class="text" type="text">
+            </label>
+
+            <label class="row">
+                <span>Select Waves Network</span>
+                <select id="wavesNet" class="select">
+                    <option value="nodes-testnet.wavesnodes.com" selected>Testnet</option>
+                    <option value="nodes-stagenet.wavesnodes.com">Stagenet</option>
+                    <option value="nodes.wavesnodes.com">Mainnet</option>
+                </select>
+            </label>
 
             <div class="actions">
-                <button id="btnApply" type="submit" class="btn primary">Apply</button>
-                <span id="applyStatus" class="status" aria-live="polite"></span>
+                <button id="btnSubmit" type="submit" class="btn primary">Submit</button>
+                <span id="submitStatus" class="status" aria-live="polite"></span>
             </div>
-        </form>
-    </section>
-    <section class="card">
-        <h2>Audit Report</h2>
-        <div class="actions">
-            <button id="btnVerify" type="button" class="btn primary">Verify</button>
-            <span id="verifyStatus" class="status" aria-live="polite"></span>
-        </div>
-        <div class="actions">
-            <button id="btnDownloadData" type="button" class="btn primary">Download Data</button>
-        </div>
-        <div class="actions">
-            <button id="btnDownloadReport" type="button" class="btn primary">Download Report</button>
-        </div>
-    </section>
-</main>
 
-<footer class="site-footer">
-    <div class="container">
-        <small>&copy; <span id="year"></span> RealCore Consulting GmbH</small>
+        </section>
+        <section class="card">
+            <h2>Data Selection</h2>
+
+            <form id="rangeForm" class="grid">
+                <fieldset class="field">
+                    <legend>Start</legend>
+                    <label>
+                        <span class="lbl">Date</span>
+                        <input id="startDate" type="date" required />
+                    </label>
+                    <label>
+                        <span class="lbl">Time</span>
+                        <input id="startTime" type="time" required step="60" />
+                    </label>
+                </fieldset>
+
+                <fieldset class="field">
+                    <legend>End</legend>
+                    <label>
+                        <span class="lbl">Date</span>
+                        <input id="endDate" type="date" required />
+                    </label>
+                    <label>
+                        <span class="lbl">Time</span>
+                        <input id="endTime" type="time" required step="60" />
+                    </label>
+                </fieldset>
+
+                <div class="actions">
+                    <button id="btnApply" type="submit" class="btn primary">Apply</button>
+                    <span id="applyStatus" class="status" aria-live="polite"></span>
+                </div>
+            </form>
+        </section>
+        <section class="card">
+            <h2>Audit Report</h2>
+            <div class="actions">
+                <button id="btnVerify" type="button" class="btn primary">Verify</button>
+                <span id="verifyStatus" class="status" aria-live="polite"></span>
+            </div>
+            <div class="actions">
+                <button id="btnDownloadData" type="button" class="btn primary">Download Data</button>
+            </div>
+            <div class="actions">
+                <button id="btnDownloadReport" type="button" class="btn primary">Download Report</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <small>&copy; <span id="year"></span> RealCore Consulting GmbH</small>
+        </div>
+    </footer>
+
+    <div id="popupOverlay" class="popup-overlay" hidden>
+        <div class="popup">
+            <p id="popupMessage"></p>
+            <button id="popupCloseBtn" class="btn popup-btn">OK</button>
+        </div>
     </div>
-</footer>
 
-<div id="popupOverlay" class="popup-overlay" hidden>
-    <div class="popup">
-        <p id="popupMessage"></p>
-        <button id="popupCloseBtn" class="btn popup-btn">OK</button>
-    </div>
-</div>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
 
-<link rel="stylesheet" href="/styles.css" />
-<script src="/app.js" defer></script>
-
-</body>
+    </body>
 </html>

@@ -6,8 +6,6 @@ let hasData = false;
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
-    console.log("App initialisiert");
-
     const hostInput = document.getElementById("host");
     const wavesAddressInput = document.getElementById("wavesAddress");
     const wavesNetSelect = document.getElementById("wavesNet");
@@ -57,7 +55,6 @@ async function handleSubmitButton(event, deps) {
         const response =  await sendPostRequest(JSON.stringify(payload));
 
         const data = await response.json();
-        console.log("Antwort vom Backend:", data);
 
         if (response.ok) {
             updateStatus(true, "Submitted","submitStatus");
@@ -82,17 +79,12 @@ async function handleApplySubmit(event, deps) {
     try {
         const response = await sendGetRequest(url);
 
-        const data = await response.json();
-        console.log("Antwort vom Backend:", data);
-
         if(response.ok) {
             updateStatus(true, "Data received", "applyStatus");
             hasData = true;
         } else {
             updateStatus(false, "Failed to retrieve data", "applyStatus");
         }
-
-        console.log("Status: hasData =", hasData);
 
     } catch (err) {
         console.error("Data Selection failed:", err);
@@ -110,7 +102,7 @@ async function handleVerifyClick(event) {
         const response = await sendGetRequest("/verifyData", "application/json");
 
         if(!response.ok) {
-            throw new Error("Status: " + response.status() + "Message: " + response.json())
+            throw new Error("Status: " + response.status + "Message: " + await response.json())
         }
 
         const data = await response.json();
@@ -140,8 +132,6 @@ async function handleDownloadDataClick(event) {
         const blob = await response.blob();
 
         downloadFile(blob, "data.csv")
-
-        console.log("Antwort vom Backend:", response);
     } catch (err) {
         console.error("Downloading Data Failed:", err);
     }
@@ -159,7 +149,6 @@ async function handleDownloadReportClick(event) {
         const blob = await response.blob();
 
         downloadFile(blob, "audit-report.pdf");
-        console.log("Antwort vom Backend:", response);
     } catch (err) {
         console.error("Downloading Report Failed:", err);
     }
@@ -167,7 +156,6 @@ async function handleDownloadReportClick(event) {
 
 function sendGetRequest(url, accept) {
     try{
-        console.log(`Sending GET request to ${url}`);
         return fetch(url, {
             method: "GET",
             headers: {
@@ -182,7 +170,6 @@ function sendGetRequest(url, accept) {
 
 function sendPostRequest(json) {
     try{
-        console.log(`Sending POST request with body ${json} to /setup`);
         return fetch("/setup", {
             method: "POST",
             headers: {
@@ -238,10 +225,6 @@ function createPayload(deps) {
 
 function createUrl(deps) {
     const { startDateInput, startTimeInput, endDateInput, endTimeInput} = deps;
-    console.log("Apply (Data Selection) ausgeführt");
-    console.log("Start:", startDateInput?.value, startTimeInput?.value);
-    console.log("End:", endDateInput?.value, endTimeInput?.value);
-
     const startDate = `${startDateInput?.value}T${startTimeInput?.value}`;
     const endDate = `${endDateInput?.value}T${endTimeInput?.value}`;
 
@@ -279,4 +262,3 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn = document.getElementById("popupCloseBtn");
     btn.addEventListener("click", closePopup);
 });
-
