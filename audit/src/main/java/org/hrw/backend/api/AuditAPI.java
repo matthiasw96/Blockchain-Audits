@@ -18,11 +18,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidParameterException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 
 public class AuditAPI implements AutoCloseable {
@@ -46,11 +44,63 @@ public class AuditAPI implements AutoCloseable {
     }
 
     private void createContexts() {
+        server.createContext("/", this::handleStatic);
         server.createContext("/setup", this::handleSetup);
         server.createContext("/selectData", this::handleSelectData);
         server.createContext("/verifyData", this::handleVerifyData);
         server.createContext("/downloadData", this::handleDownloadData);
         server.createContext("/downloadReport", this::handleDownloadReport);
+    }
+
+    private void handleStatic(HttpExchange exchange) throws IOException {
+        String method = exchange.getRequestMethod();
+        if (!"GET".equalsIgnoreCase(method)) {
+            exchange.sendResponseHeaders(405, -1);
+            exchange.close();
+            return;
+        }
+
+        String path = exchange.getRequestURI().getPath();
+
+        if (path.equals("/")) {
+            path = "/index.html";
+        }
+
+        String resourceName = path.startsWith("/") ? path.substring(1) : path;
+
+        InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName);
+
+        if (is == null) {
+            // Datei existiert nicht
+            String msg = "Not found: " + resourceName;
+            byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+            exchange.sendResponseHeaders(404, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+            return;
+        }
+
+        byte[] bytes = is.readAllBytes();
+        String contentType = guessContentType(resourceName);
+
+        exchange.getResponseHeaders().set("Content-Type", contentType);
+        exchange.sendResponseHeaders(200, bytes.length);
+
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
+
+        is.close();
+        exchange.close();
+    }
+
+    private String guessContentType(String resourceName) {
+        if (resourceName.endsWith(".html")) return "text/html; charset=utf-8";
+        if (resourceName.endsWith(".css"))  return "text/css; charset=utf-8";
+        if (resourceName.endsWith(".js"))   return "application/javascript; charset=utf-8";
+        return "application/octet-stream";
     }
 
     private void handleSetup(HttpExchange httpExchange) throws IOException {
@@ -74,12 +124,8 @@ public class AuditAPI implements AutoCloseable {
             startDate = LocalDateTime.parse(start).atZone(ZoneId.of("Europe/Berlin"));
             endDate = LocalDateTime.parse(end).atZone(ZoneId.of("Europe/Berlin"));
 
-            checkDates(startDate, endDate);
-
             data = dataCollector.getServerData(startDate, endDate);
             respond(httpExchange, "application/json", 200, jsonResponse("OK", "Data retrieved"));
-        } catch (InvalidParameterException e){
-            respond(httpExchange, "application/json", 400, jsonResponse("Bad Request", "Impossible date range. Start date must be before end date"));
         } catch (InterruptedException e) {
             respond(httpExchange, "application/json", 500, jsonResponse("Internal Server Error","Error reaching database"));
         }
@@ -115,7 +161,6 @@ public class AuditAPI implements AutoCloseable {
         verifier = new Verifier(hasher, handler);
     }
 
-
     private AuditSummary createSummary() {
         return new AuditSummary(
                 java.util.UUID.randomUUID().toString(),
@@ -137,12 +182,6 @@ public class AuditAPI implements AutoCloseable {
                             return ts >= from && ts <= to;
                         })
                         .toList();
-    }
-
-    private void checkDates(ZonedDateTime startDate, ZonedDateTime endDate) throws InvalidParameterException {
-        if(endDate.isBefore(startDate)) {
-            throw new InvalidParameterException();
-        }
     }
 
     private void respond(HttpExchange ex, String contentType, int status, byte[] bytes) throws IOException {
@@ -175,5 +214,5 @@ public class AuditAPI implements AutoCloseable {
         return gson.toJson(new JsonResponse(code, msg)).getBytes(StandardCharsets.UTF_8);
     }
 
-    private record JsonResponse(String error, String message) {}
+    private record JsonResponse(String status, String message) {}
 }

@@ -1,20 +1,26 @@
-/* 1) Design tokens */
+/* 1) Design Tokens */
 :root {
     --bg: #0b0c10;
     --panel: #121319;
     --text: #e6e6e6;
     --muted: #9aa3af;
     --brand: #3b82f6;
-    --brand-ink: #0b1220;
     --border: #1f2430;
     --radius: 14px;
     --shadow: 0 8px 24px rgba(0,0,0,.25);
-    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Apple Color Emoji","Segoe UI Emoji";
 }
 
-/* 2) Reset-ish + base */
-* { box-sizing: border-box; }
-html, body { height: 100%; }
+/* 2) Reset + Basis */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
 body {
     margin: 0;
     background: var(--bg);
@@ -22,29 +28,37 @@ body {
     font: 16px/1.5 var(--font);
 }
 
-a { color: var(--brand); text-decoration: none; }
-a:hover { text-decoration: underline; }
-
 .container {
     max-width: 900px;
     margin: 0 auto;
     padding: 24px;
 }
 
-.site-header, .site-footer {
+/* 3) Layout: Header & Footer */
+.site-header,
+.site-footer {
     border-bottom: 1px solid var(--border);
 }
-.site-footer { border-top: 1px solid var(--border); border-bottom: none; }
 
-.site-title { margin: 0 0 0 12px; font-size: 1.25rem; }
-.logo { width: 28px; height: 28px; opacity: .9; }
+.site-footer {
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+}
 
 .site-header .container,
 .site-footer .container {
-    display: flex; align-items: center; gap: 12px; justify-content: space-between;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-/* 3) Components */
+.site-title {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+/* 4) Cards */
 .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -53,44 +67,130 @@ a:hover { text-decoration: underline; }
     box-shadow: var(--shadow);
 }
 
-.muted { color: var(--muted); }
+/* Abstand zwischen den Cards */
+.card + .card {
+    margin-top: 16px;
+}
 
-.actions { margin: 12px 0 8px; }
+/* 5) Zeilenlayout für Connection (Label links, Feld rechts) */
+.row {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+/* 6) Eingabefelder: Text & Select */
+.text,
+.select {
+    width: 100%;
+    background: #1b1e27;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+}
+
+/* 7) Buttons */
+.actions {
+    margin-top: 16px;
+    margin-right: 16px;
+}
+
+.status {
+    margin-left: 12px;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status--ok {
+    color: #22c55e; /* green-500 */
+}
+
+.status--error {
+    color: #f97373; /* red-400 */
+}
+
+.status:empty {
+    display: none;
+}
+
+/* --- Popup Overlay (dunkler Hintergrund) --- */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.popup-overlay[hidden] {
+    display: none !important;
+}
+
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.popup {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+    color: var(--text);
+    box-shadow: var(--shadow);
+}
+
+.popup-btn {
+    margin-top: 14px;
+    width: 100%;
+}
 
 .btn {
-    appearance: none; border: 1px solid var(--border);
-    padding: 10px 14px; border-radius: 12px; cursor: pointer;
-    background: #1b1e27; color: var(--text);
+    appearance: none;
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    background: #1b1e27;
+    color: var(--text);
+    font: inherit;
 }
+
 .btn.primary {
     background: var(--brand);
-    color: white; border: none;
-}
-.btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.btn:hover { filter: brightness(1.05); }
-
-.output {
-    margin: 8px 0 0;
-    background: #0e1016; border: 1px solid var(--border);
-    padding: 12px; border-radius: 10px; overflow: auto;
+    color: white;
+    border: none;
 }
 
-/* Toast */
-.toast {
-    position: fixed; right: 16px; bottom: 16px;
-    background: var(--brand); color: white;
-    padding: 10px 12px; border-radius: 10px; box-shadow: var(--shadow);
+.btn:hover {
+    filter: brightness(1.05);
 }
 
-/* Accessibility */
-.skip-link {
-    position: absolute; left: -9999px; top: -9999px;
-}
-.skip-link:focus {
-    left: 16px; top: 16px; background: var(--brand); color: white;
-    padding: 8px 12px; border-radius: 8px;
+.btn:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
 }
 
+/* 8) Grid für Data Selection */
 .grid {
     display: grid;
     gap: 16px;
@@ -98,6 +198,7 @@ a:hover { text-decoration: underline; }
     align-items: end;
 }
 
+/* 9) Fieldsets & Labels in Data Selection */
 .field {
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -105,7 +206,10 @@ a:hover { text-decoration: underline; }
     min-width: 0;
 }
 
-.field legend { font-weight: 600; margin-bottom: 8px; }
+.field legend {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
 
 .field label {
     display: grid;
@@ -113,17 +217,24 @@ a:hover { text-decoration: underline; }
     margin-bottom: 8px;
 }
 
-.lbl { font-size: .9rem; color: var(--muted); }
+.lbl {
+    font-size: 0.9rem;
+    color: var(--muted);
+}
 
-input[type="date"], input[type="time"] {
+/* 10) Datum/Zeit-Inputs */
+input[type="date"],
+input[type="time"] {
+    width: 100%;
     background: #1b1e27;
     border: 1px solid var(--border);
     color: var(--text);
     border-radius: 10px;
     padding: 10px 12px;
+    font: inherit;
 }
-input:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-
-/* Optional: auto dark support tweaks (already dark) */
-/* @media (prefers-color-scheme: light) { ... } */
+input:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+}

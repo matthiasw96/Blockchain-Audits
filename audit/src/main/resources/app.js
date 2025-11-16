@@ -1,135 +1,282 @@
-const $ = (sel) => document.querySelector(sel);
+"use strict";
 
-function toast(msg, ms = 1800) {
-    const el = $("#toast");
-    el.textContent = msg;
-    el.hidden = false;
-    setTimeout(() => (el.hidden = true), ms);
-}
-
-async function fetchJSON(url, opts) {
-    const res = await fetch(url, { headers: { "Accept": "application/json" }, ...opts });
-    if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-    }
-    return res.json().catch(() => res.text()); // allows plain text API too
-}
-
-async function loadSummary() {
-    const out = $("#output");
-    out.textContent = "Loading…";
-    try {
-        const data = await fetchJSON("/api/summary");
-        out.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-        toast("Summary loaded");
-    } catch (e) {
-        out.textContent = `Error: ${e.message}`;
-        toast("Failed to load", 2000);
-    }
-}
-
-function init() {
-    $("#year").textContent = new Date().getFullYear();
-    $("#loadBtn").addEventListener("click", loadSummary);
-}
+let isConnected = false;
+let hasData = false;
 
 document.addEventListener("DOMContentLoaded", init);
-// --- Utilities ---
-const pad = (n) => String(n).padStart(2, "0");
 
-// Formatters to your required shapes
-function fmtDateYYYYMMDD(d) {
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-function fmtTimeHHmm(d) {
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+function init() {
+    console.log("App initialisiert");
 
-// Round a Date to nearest minute (down)
-function floorToMinute(d) {
-    const copy = new Date(d);
-    copy.setSeconds(0, 0);
-    return copy;
-}
+    const hostInput = document.getElementById("host");
+    const wavesAddressInput = document.getElementById("wavesAddress");
+    const wavesNetSelect = document.getElementById("wavesNet");
 
-// --- Initialize default values: end=now, start=end-1h ---
-function initDatePickers() {
-    const now = floorToMinute(new Date());
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const rangeForm = document.getElementById("rangeForm");
+    const startDateInput = document.getElementById("startDate");
+    const startTimeInput = document.getElementById("startTime");
+    const endDateInput = document.getElementById("endDate");
+    const endTimeInput = document.getElementById("endTime");
 
-    document.getElementById("endDate").value = fmtDateYYYYMMDD(now);
-    document.getElementById("endTime").value = fmtTimeHHmm(now);
+    const btnSubmit = document.getElementById("btnSubmit");
+    const btnApply = document.getElementById("btnApply");
+    const btnVerify = document.getElementById("btnVerify");
+    const btnDownloadData = document.getElementById("btnDownloadData");
+    const btnDownloadReport = document.getElementById("btnDownloadReport");
 
-    document.getElementById("startDate").value = fmtDateYYYYMMDD(oneHourAgo);
-    document.getElementById("startTime").value = fmtTimeHHmm(oneHourAgo);
-}
-
-// Build JS Date from two inputs (local time)
-function buildDate(dateStr, timeStr) {
-    // dateStr: YYYY-MM-DD, timeStr: HH:mm
-    const [y, m, d] = dateStr.split("-").map(Number);
-    const [hh, mm] = timeStr.split(":").map(Number);
-    return new Date(y, m - 1, d, hh, mm, 0, 0);
-}
-
-// Validate: start <= end
-function validateRange(start, end) {
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        throw new Error("Please select valid dates and times.");
+    if (btnSubmit) {
+        btnSubmit.addEventListener("click", (event) =>
+            handleSubmitButton(event, { hostInput, wavesAddressInput, wavesNetSelect, btnApply })
+        );
     }
-    if (start > end) {
-        throw new Error("Start must be before or equal to End.");
+
+    if (rangeForm) {
+        rangeForm.addEventListener("submit", (event) =>
+            handleApplySubmit(event, { startDateInput, startTimeInput, endDateInput, endTimeInput, btnVerify, btnDownloadData, btnDownloadReport })
+        );
+    }
+
+    if (btnVerify) {
+        btnVerify.addEventListener("click", handleVerifyClick);
+    }
+    if (btnDownloadData) {
+        btnDownloadData.addEventListener("click", handleDownloadDataClick);
+    }
+    if (btnDownloadReport) {
+        btnDownloadReport.addEventListener("click", handleDownloadReportClick);
     }
 }
 
-// Example: call backend with the chosen range
-async function submitRange(e) {
-    e.preventDefault();
-    const startDate = document.getElementById("startDate").value;
-    const startTime = document.getElementById("startTime").value;
-    const endDate = document.getElementById("endDate").value;
-    const endTime = document.getElementById("endTime").value;
 
-    const start = buildDate(startDate, startTime);
-    const end = buildDate(endDate, endTime);
+async function handleSubmitButton(event, deps) {
+    event.preventDefault();
+
+    const payload = createPayload(deps);
 
     try {
-        validateRange(start, end);
+        const response =  await sendPostRequest(JSON.stringify(payload));
 
-        // If your API wants strings:
-        const params = new URLSearchParams({
-            fromDate: startDate,           // YYYY-MM-DD
-            fromTime: startTime,           // HH:mm
-            toDate: endDate,
-            toTime: endTime,
-        });
+        const data = await response.json();
+        console.log("Antwort vom Backend:", data);
 
-        // Or, if your API wants ISO: start.toISOString(), end.toISOString()
-
-        // Sample request to your endpoint:
-        const data = await fetchJSON(`/api/summary?${params.toString()}`);
-
-        // Show result (reusing your existing output area)
-        const out = document.getElementById("output");
-        out.textContent = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-        toast("Range applied");
+        if (response.ok) {
+            updateStatus(true, "Submitted","submitStatus");
+            isConnected = true;
+        } else {
+            console.error("HTTP Fehler:", response.status);
+            updateStatus(false, data.message || "Failed to connect to backend","submitStatus");
+        }
     } catch (err) {
-        toast(err.message, 2500);
+        console.error("Setup-Request fehlgeschlagen:", err);
+        updateStatus(false, "Failed to connect to backend","submitStatus");
     }
 }
 
-// Hook everything up
-function initRangeForm() {
-    initDatePickers();
-    document.getElementById("rangeForm").addEventListener("submit", submitRange);
+async function handleApplySubmit(event, deps) {
+    event.preventDefault();
+
+    if(!checkConnection()) {return}
+
+    const url = createUrl(deps)
+
+    try {
+        const response = await sendGetRequest(url);
+
+        const data = await response.json();
+        console.log("Antwort vom Backend:", data);
+
+        if(response.ok) {
+            updateStatus(true, "Data received", "applyStatus");
+            hasData = true;
+        } else {
+            updateStatus(false, "Failed to retrieve data", "applyStatus");
+        }
+
+        console.log("Status: hasData =", hasData);
+
+    } catch (err) {
+        console.error("Data Selection failed:", err);
+        updateStatus(false, "Failed to connect", "applyStatus");
+    }
 }
 
-// Call from your existing init()
-function init() {
-    document.getElementById("year").textContent = new Date().getFullYear();
-    document.getElementById("loadBtn").addEventListener("click", loadSummary);
-    initRangeForm(); // <-- add this
+async function handleVerifyClick(event) {
+    event.preventDefault();
+
+    if(!checkConnection()) {return}
+    if(!checkData()) {return}
+
+    try{
+        const response = await sendGetRequest("/verifyData", "application/json");
+
+        if(!response.ok) {
+            throw new Error("Status: " + response.status() + "Message: " + response.json())
+        }
+
+        const data = await response.json();
+        console.log("Antwort vom Backend:", data);
+        console.log("Message: ", data.message);
+
+        if(data.message === "true") {
+            updateStatus(true, "Data verified", "verifyStatus");
+        } else {
+            updateStatus(false, "Verification failed", "verifyStatus");
+        }
+    } catch (err) {
+        updateStatus(false, "Failed to connect to backend", "verifyStatus");
+        console.error("Failed to connect to backend:", err);
+    }
 }
 
-document.addEventListener("DOMContentLoaded", init);
+async function handleDownloadDataClick(event) {
+    event.preventDefault();
+
+    if(!checkConnection()) {return}
+    if(!checkData()) {return}
+
+    try{
+        const response = await sendGetRequest("/downloadData", "text/csv");
+
+        const blob = await response.blob();
+
+        downloadFile(blob, "data.csv")
+
+        console.log("Antwort vom Backend:", response);
+    } catch (err) {
+        console.error("Downloading Data Failed:", err);
+    }
+}
+
+async function handleDownloadReportClick(event) {
+    event.preventDefault();
+
+    if(!checkConnection()) {return}
+    if(!checkData()) {return}
+
+    try{
+        const response = await sendGetRequest("/downloadReport","application/pdf");
+
+        const blob = await response.blob();
+
+        downloadFile(blob, "audit-report.pdf");
+        console.log("Antwort vom Backend:", response);
+    } catch (err) {
+        console.error("Downloading Report Failed:", err);
+    }
+}
+
+function sendGetRequest(url, accept) {
+    try{
+        console.log(`Sending GET request to ${url}`);
+        return fetch(url, {
+            method: "GET",
+            headers: {
+                "Accept": `${accept}`
+            }
+        });
+    } catch (err) {
+        console.error(`GET request to ${url} failed: `, err);
+        throw err;
+    }
+}
+
+function sendPostRequest(json) {
+    try{
+        console.log(`Sending POST request with body ${json} to /setup`);
+        return fetch("/setup", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: json
+        });
+    } catch (err) {
+        console.error("POST request failed:", err);
+        throw err;
+    }
+}
+
+function checkConnection() {
+    if (!isConnected) {
+        popup("Please submit the connection details first");
+        return false;
+    }
+    return true;
+}
+
+function checkData() {
+    if (!hasData) {
+        popup("Please select data range first!");
+        return false;
+    }
+    return true;
+}
+
+function updateStatus(ok, message, element) {
+    const statusEl = document.getElementById(element);
+
+    statusEl.classList.remove("status--ok", "status--error");
+
+    if (ok) {
+        statusEl.classList.add("status--ok");
+        statusEl.textContent = message;
+    } else {
+        statusEl.classList.add("status--error");
+        statusEl.textContent = message;
+    }
+}
+
+function createPayload(deps) {
+    const { hostInput, wavesAddressInput, wavesNetSelect} = deps;
+    return {
+        bhUri: wavesNetSelect?.value || "",
+        bhAddress: wavesAddressInput?.value || "",
+        collectorUri: hostInput?.value || ""
+    };
+}
+
+function createUrl(deps) {
+    const { startDateInput, startTimeInput, endDateInput, endTimeInput} = deps;
+    console.log("Apply (Data Selection) ausgeführt");
+    console.log("Start:", startDateInput?.value, startTimeInput?.value);
+    console.log("End:", endDateInput?.value, endTimeInput?.value);
+
+    const startDate = `${startDateInput?.value}T${startTimeInput?.value}`;
+    const endDate = `${endDateInput?.value}T${endTimeInput?.value}`;
+
+    return `/selectData?startDate=${startDate}&endDate=${endDate}`;
+}
+
+function downloadFile(blob, filename) {
+    const urlObject = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = urlObject;
+    a.download = filename;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(urlObject);
+}
+
+function popup(message) {
+    const overlay = document.getElementById("popupOverlay");
+    const msg = document.getElementById("popupMessage");
+
+    msg.textContent = message;
+    overlay.hidden = false;
+}
+
+function closePopup() {
+    const overlay = document.getElementById("popupOverlay");
+    overlay.hidden = true;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("popupCloseBtn");
+    btn.addEventListener("click", closePopup);
+});
+
