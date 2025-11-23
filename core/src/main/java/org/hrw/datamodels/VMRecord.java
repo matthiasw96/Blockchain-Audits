@@ -1,5 +1,15 @@
 package org.hrw.datamodels;
 
+/**
+ * Represents the telemetry metrics of a single virtual machine at a given point in time.
+ *
+ * <p>A {@code VMRecord} contains CPU, memory, network and disk statistics for
+ * one VM, identified by its {@code id}. The fields provide the raw measurement
+ * values extracted from the server's monitoring data.</p>
+ *
+ * <p>This record is used as part of {@link ServerRecord} and provides both
+ * attribute names and SQL-ready values for database persistence.</p>
+ */
 public record VMRecord(
         int id,
         double cpu_avg,

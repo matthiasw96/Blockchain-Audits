@@ -28,18 +28,49 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * Converts raw monitoring data between different representations and the
+ * internal domain model ({@link ServerRecord}, {@link VMRecord}).
+ *
+ * <p>Supported conversions include:</p>
+ * <ul>
+ *     <li>XML (RRD updates) → {@link ServerRecord}</li>
+ *     <li>JDBC {@link ResultSet} → {@link ServerRecord}</li>
+ *     <li>JSON → {@link ServerRecord}</li>
+ *     <li>{@link ServerRecord} → CSV byte array</li>
+ * </ul>
+ *
+ * <p>The converter uses a mapping file (e.g. {@code map.csv}) to translate raw
+ * legend names from the monitoring output into canonical column names used by
+ * the application and database.</p>
+ */
 public class Converter {
     private final Map<String,String> map;
     private final ObjectMapper mapper;
     private final Path path;
 
-    //TODO: Übernahme map.csv aus Konfigdatei
     public Converter(String path) {
         this.path = Path.of(path);
         this.map = this.createColumnMap();
         this.mapper = new ObjectMapper();
     }
 
+    /**
+     * Converts an XML document containing monitoring data into a list of
+     * {@link ServerRecord} objects.
+     *
+     * <p>The method:</p>
+     * <ol>
+     *     <li>extracts the data node and its rows,</li>
+     *     <li>builds a legend list using the mapping file,</li>
+     *     <li>maps each XML row to a {@link ServerRecord},</li>
+     *     <li>reverses the list so data is ordered chronologically.</li>
+     * </ol>
+     *
+     * @param xmlDoc source XML document
+     * @return list of converted server records
+     * @throws XPathExpressionException if the XPath queries fail
+     */
     public List<ServerRecord> xmlToServerRecord(Document xmlDoc) throws XPathExpressionException {
         XPath xPath = XPathFactory.newInstance().newXPath();
         Node data = (Node) xPath.evaluate("//data", xmlDoc, XPathConstants.NODE);
@@ -60,6 +91,16 @@ public class Converter {
         return unpackedData;
     }
 
+    /**
+     * Converts a JDBC {@link ResultSet} into a list of {@link ServerRecord} objects.
+     *
+     * <p>The method expects columns matching the flattened schema of
+     * {@link ServerRecord} and {@link VMRecord} (e.g. {@code vm2_cpu_avg}, ...).</p>
+     *
+     * @param resultSet query result containing server metrics
+     * @return list of server records constructed from the result set
+     * @throws SQLException if column access fails
+     */
     public List<ServerRecord> resultSetToServerRecord(ResultSet resultSet) throws SQLException {
         List<ServerRecord> serverData = new ArrayList<>();
 
@@ -82,6 +123,16 @@ public class Converter {
         return serverData;
     }
 
+    /**
+     * Converts a JSON payload into a list of {@link ServerRecord} objects.
+     *
+     * <p>The JSON is expected to contain a top-level {@code data} array, whose
+     * elements can be mapped directly to {@link ServerRecord}.</p>
+     *
+     * @param rawBody JSON string containing the data array
+     * @return list of server records
+     * @throws JsonProcessingException if parsing or mapping fails
+     */
     public List<ServerRecord> jsonToServerRecord(String rawBody) throws JsonProcessingException {
         List<ServerRecord> serverData = new ArrayList<>();
 
@@ -95,6 +146,17 @@ public class Converter {
         return serverData;
     }
 
+    /**
+     * Converts a list of {@link ServerRecord} objects into a CSV export.
+     *
+     * <p>The first line contains the attribute names derived from
+     * {@link ServerRecord#getAttributeNames()}, followed by one line per
+     * record. Commas are replaced by semicolons to avoid issues with
+     * regional settings for csv files.</p>
+     *
+     * @param filteredData list of records to export
+     * @return CSV content as UTF-8 encoded byte array
+     */
     public byte[] serverRecordToCsv(List<ServerRecord> filteredData) {
         String csv = filteredData.getFirst().getAttributeNames() + "\n";
 
@@ -105,6 +167,14 @@ public class Converter {
         return csv.replaceAll(",",";").getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     * Creates the legend list from the XML document by mapping raw legend names
+     * to canonical names using the mapping file.
+     *
+     * @param sourceXml XML document containing a {@code legend} node
+     * @return ordered list of canonical column names
+     * @throws XPathExpressionException if XPath evaluation fails
+     */
     private List<String> createLegendList(Document sourceXml) throws XPathExpressionException {
         XPath xPath = XPathFactory.newInstance().newXPath();
         Node legend = (Node) xPath.evaluate("//legend", sourceXml, XPathConstants.NODE);
@@ -119,6 +189,13 @@ public class Converter {
         return legendList;
     }
 
+    /**
+     * Maps a single XML row (representing one timestamp) into a {@link ServerRecord}.
+     *
+     * @param row node list representing the data row
+     * @param legendList canonical names corresponding to the value positions
+     * @return server record with VM metrics extracted from the row
+     */
     private ServerRecord mapXmlMessage(NodeList row, List<String> legendList) {
         String timestamp = row.item(0).getTextContent();
 
@@ -136,6 +213,18 @@ public class Converter {
         );
     }
 
+    /**
+     * Extracts all metrics for a given VM from an XML row and constructs
+     * a corresponding {@link VMRecord}.
+     *
+     * <p>Internally, this method uses regex filters on the legend list to
+     * locate all relevant columns (CPU, memory, network, disk).</p>
+     *
+     * @param row XML row values
+     * @param legendList canonical legend names
+     * @param vm VM identifier (e.g. 2, 3, 4, 5)
+     * @return VM record with aggregated metrics
+     */
     private VMRecord nodeListToVMRecord(NodeList row, List<String> legendList, int vm) {
         List<Double> cpu = this.extractValues("^vm"+vm+"_cpu\\d+$", legendList, row);
         List<Double> memory = this.extractValues("^vm"+vm+"_memory$", legendList, row);
@@ -164,6 +253,15 @@ public class Converter {
         );
     }
 
+    /**
+     * Extracts numeric values from an XML row based on a regex applied to
+     * the legend list.
+     *
+     * @param regex regular expression to match legend entries
+     * @param legendList canonical legend names in order
+     * @param row XML row node list
+     * @return list of parsed double values for all matching columns
+     */
     private List<Double> extractValues(String regex, List<String> legendList, NodeList row) {
         return IntStream.range(0, legendList.size())
                 .filter(i -> Pattern.matches(regex, legendList.get(i)))
@@ -174,6 +272,15 @@ public class Converter {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Reconstructs a {@link VMRecord} from a JDBC {@link ResultSet} for a
+     * specific VM prefix (e.g. {@code vm2}, {@code vm3}, ...).
+     *
+     * @param resultSet SQL result set containing flattened VM metrics
+     * @param vm VM identifier (used for column name prefixes)
+     * @return reconstructed VM record
+     * @throws SQLException if column access fails
+     */
     private VMRecord resultSetToVMRecord(ResultSet resultSet, int vm) throws SQLException {
         double cpu_avg = resultSet.getDouble("vm"+vm+"_cpu_avg");
         double cpu_max = resultSet.getDouble("vm"+vm+"_cpu_max");
@@ -197,6 +304,12 @@ public class Converter {
         );
     }
 
+    /**
+     * Loads the mapping from raw legend names to canonical names from the
+     * configured mapping file.
+     *
+     * @return a map from raw to canonical column names, or {@code null} if loading fails
+     */
     private Map<String, String> createColumnMap() {
         try (InputStream in = Files.newInputStream(path);
              BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
@@ -208,6 +321,13 @@ public class Converter {
         return null;
     }
 
+    /**
+     * Reads all lines from the mapping file and builds a lookup map.
+     *     *
+     * @param reader buffered reader over the mapping file
+     * @return map containing raw → canonical name mappings
+     * @throws IOException if reading fails
+     */
     private static Map<String, String> readLines(BufferedReader reader) throws IOException {
         Map<String, String> serverMap = new HashMap<>();
         String line;
