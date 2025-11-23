@@ -18,6 +18,7 @@ Das Projekt ist als **Maven-Multi-Modul-Projekt** aufgebaut:
 - **`audit`** – Webbasierter Audit-Service inkl. Frontend, um Verifikationen durchzuführen
 
 Die Dokumentation zu dem entwickelten Code befindet sich unter https://matthiasw96.github.io/Blockchain-Audits/
+
 ---
 
 ## Modulübersicht
