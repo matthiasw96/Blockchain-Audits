@@ -5,7 +5,8 @@ Dieses Repository gehört zu einer Bachelorarbeit zum Thema:
 > **Integritätsnachweise für Systemmetriken durch Blockchain-Verankerung**
 
 Ziel ist es, Servermetriken manipulationssicher abzulegen, indem:
-- Rohdaten in einer Datenbank gespeichert werden,
+- Rohdaten von einem lokalen Server abgerufen werden 
+- Aufbereitete Daten in einer Datenbank gespeichert werden,
 - aus diesen Daten ein (hierarchischer) Merkle-Hash-Tree berechnet wird,
 - der Root-Hash dieses Trees in einer Blockchain (Waves) verankert wird,
 - und ein Audit-Tool die Daten später verifizieren kann.
@@ -46,6 +47,7 @@ Sowohl **`app`** als auch **`audit`** nutzen dieses Modul.
 Verantwortlich für:
 
 - Einsammeln von Serverdaten vom lokalen Server (über `Collector`)
+- Aufbereitung der Daten in vorgestelltes Datenmodell
 - Speichern in der Datenbank (`DatabaseHandler`)
 - Erzeugen eines Merkle-Hash-Trees (`Hasher` aus `core`)
 - Verankerung des Merkle-Root-Hashes in der Waves-Blockchain (`AnchorService`)
@@ -120,11 +122,16 @@ Wird als getrennte JAR auf einem anderen System betrieben und greift per HTTP au
 - `styles.css` – Layout und Styles
 
 ---
+### Datenbank
+- Die Datenbank wurde als PostgreSQL Datenbank aufgesetzt
+- Der Ordner `db` enthält Dateien mit den für die Erstellung der Datenbank benutzten SQL-Befehle
 
+---
 ### Konfigurations- & Hilfsdateien
 
+Für die Ausführung des Tools sind die folgenden beiden Dateien im selben Verzeichnis abzulegen wie die jeweiligen `.jar`-Dateien der Anwendungen
 - `config.properties`  
-  Enthält Konfiguration für DB, Blockchain, Intervalle etc. (wird von `ConfigLoader` gelesen).
+  Enthält Konfiguration für DB, Blockchain, Intervalle etc. (wird von `ConfigLoader` gelesen). Die Datei `config.example.properties` liefert ein Beispiel für den Aufbau 
 
 - `map.csv`  
   Mapping-Datei, um Rohdaten vom Server auf Datamodelle/Felder zu mappen (z. B. Spaltenzuordnung).
@@ -134,9 +141,11 @@ Wird als getrennte JAR auf einem anderen System betrieben und greift per HTTP au
 ## Build & Run
 
 ### Voraussetzungen
-
+Für den Zugriff auf den in diesem Projekt verwendeten Server ist ein VPN notwendig. Der Server ist nicht öffentlich zugänglich.
+Des Weiteren wird die Datei `map.csv` benötigt, welche ebenfalls nicht öffentlich verfügbar ist. Sonstige Voraussetzungen:
 - Java (z. B. 17)
 - Maven 3.x
+- Config-Datei
 - Laufende Datenbankinstanz (z. B. PostgreSQL/MySQL)
 - Zugriff auf einen Waves-Node (Testnet/Mainnet)
 
@@ -144,3 +153,18 @@ Wird als getrennte JAR auf einem anderen System betrieben und greift per HTTP au
 
 ```bash
 mvn clean package
+```
+
+### App starten
+Folgenden bash-Befehl ausführen:
+```bash
+java -jar app/target/app-1.0-SNAPSHOT.jar
+```
+
+### Audit Webservice starten
+Folgenden bash-Befehl ausführen:
+```bash
+java -jar audit/target/audit-1.0-SNAPSHOT.jar
+```
+
+Der Webservice ist erreichbar unter `localhost:8000/index.html`
