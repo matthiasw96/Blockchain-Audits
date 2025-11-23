@@ -18,9 +18,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Main {
-    public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     public static void main(String[] args) {
+        DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
         ConfigRecord config = ConfigLoader.loadFromFile(Path.of("config.properties"));
 
         SwingUtilities.invokeLater(() -> {
@@ -53,7 +54,8 @@ public class Main {
                     Hasher hasher = new Hasher(
                             config.hashIntervalMinutes(),
                             FORMATTER,
-                            config.hashAlgorithm());
+                            config.hashAlgorithm()
+                    );
 
                     AnchorService anchorService = new AnchorService.AnchorServiceBuilder()
                             .setPrivateKey(uiInput.seedPhraseAnchor())
@@ -72,13 +74,15 @@ public class Main {
 
                     Scheduler scheduler = new Scheduler(
                             processor,
-                            config.jobInterval());
+                            config.jobInterval()
+                    );
 
-                    DatabaseAPI databaseAPI = new DatabaseAPI(
-                            config.databaseApiPort(),
-                            dbHandler,
-                            config.hashIntervalMinutes(),
-                            FORMATTER);
+                    DatabaseAPI databaseAPI = new DatabaseAPI.DatabaseAPIbuilder()
+                            .setDbHandler(dbHandler)
+                            .setInterval(config.hashIntervalMinutes())
+                            .setServer(config.databaseApiPort())
+                            .setFormatter(FORMATTER)
+                            .build();
 
                     databaseAPI.start();
 

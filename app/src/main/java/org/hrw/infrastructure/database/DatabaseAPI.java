@@ -22,19 +22,19 @@ import java.util.concurrent.Executors;
 public class DatabaseAPI implements AutoCloseable {
     private final HttpServer server;
     private final DatabaseHandler db;
-    private final Gson gson;
-    private final ZoneId zoneId;
     private final DateTimeFormatter FORMATTER;
     private final int interval;
+    private final Gson gson;
+    private final ZoneId zoneId;
 
-    public DatabaseAPI(int port, DatabaseHandler db, int interval, DateTimeFormatter FORMATTER) throws IOException {
-        this.server = HttpServer.create(new InetSocketAddress(port), 0);
+    public DatabaseAPI(DatabaseAPIbuilder builder) {
+        this.server = builder.server;
         server.setExecutor(Executors.newSingleThreadExecutor());
-        this.db = db;
-        this.interval = interval;
+        this.db = builder.dbHandler;
+        this.interval = builder.interval;
+        this.FORMATTER = builder.FORMATTER;
         this.gson = new Gson();
         this.zoneId = ZoneId.of("Europe/Berlin");
-        this.FORMATTER = FORMATTER;
         createContexts();
     }
 
@@ -122,4 +122,33 @@ public class DatabaseAPI implements AutoCloseable {
 
     private record DataResponse(int count, List<ServerRecord> data) {}
     private record ErrorResponse(String error, String message) {}
+
+    public static class DatabaseAPIbuilder {
+        private HttpServer server;
+        private DatabaseHandler dbHandler;
+        private DateTimeFormatter FORMATTER;
+        private int interval;
+
+        public DatabaseAPIbuilder setDbHandler(DatabaseHandler dbHandler) {
+            this.dbHandler = dbHandler;
+            return this;
+        }
+
+        public DatabaseAPIbuilder setServer(int port) throws IOException {
+            this.server = HttpServer.create(new InetSocketAddress(port), 0);
+            return this;
+        }
+
+        public DatabaseAPIbuilder setInterval(int interval) {
+            this.interval = interval;
+            return this;
+        }
+
+        public DatabaseAPIbuilder setFormatter(DateTimeFormatter FORMATTER) {
+            this.FORMATTER = FORMATTER;
+            return this;
+        }
+
+        public DatabaseAPI build() { return new DatabaseAPI(this); }
+    }
 }

@@ -48,11 +48,12 @@ public class Main {
                 FORMATTER
         );
 
-        AuditAPI api = new AuditAPI(
-                collector,
-                verifier,
-                converter,
-                FORMATTER);
+        AuditAPI api = new AuditAPI.AuditAPIBuilder()
+                .setConverter(converter)
+                .setDataCollector(collector)
+                .setVerifier(verifier)
+                .setFormat(FORMATTER)
+                .build();
 
         api.start();
     }

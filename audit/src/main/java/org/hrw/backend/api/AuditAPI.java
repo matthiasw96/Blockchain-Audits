@@ -22,28 +22,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class AuditAPI implements AutoCloseable {
-    private final HttpServer server;
     private final DataCollector dataCollector;
     private final Verifier verifier;
     private final Converter converter;
+    private final DateTimeFormatter FORMATTER;
+    private final HttpServer server;
+    private final PdfGenerator pdfCreator;
     private final Gson gson;
     private ZonedDateTime startDate;
     private ZonedDateTime endDate;
     private boolean isVerified;
     private List<ServerRecord> data;
-    private final PdfGenerator pdfCreator;
-    private final DateTimeFormatter FORMATTER;
 
-    public AuditAPI(
-            DataCollector dataCollector,
-            Verifier verifier,
-            Converter converter,
-            DateTimeFormatter FORMATTER) throws IOException {
+    public AuditAPI(AuditAPIBuilder builder) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(8000), 0);
-        this.dataCollector = dataCollector;
-        this.verifier = verifier;
-        this.converter = converter;
-        this.FORMATTER = FORMATTER;
+        this.dataCollector = builder.dataCollector;
+        this.verifier = builder.verifier;
+        this.converter = builder.converter;
+        this.FORMATTER = builder.FORMATTER;
         this.gson = new Gson();
         this.pdfCreator = new PdfGenerator(FORMATTER);
         createContexts();
@@ -191,4 +187,33 @@ public class AuditAPI implements AutoCloseable {
     }
 
     private record JsonResponse(String status, String message) {}
+
+    public static class AuditAPIBuilder {
+        private DataCollector dataCollector;
+        private Verifier verifier;
+        private Converter converter;
+        private DateTimeFormatter FORMATTER;
+
+        public AuditAPIBuilder setDataCollector(DataCollector dataCollector) {
+            this.dataCollector = dataCollector;
+            return this;
+        }
+
+        public AuditAPIBuilder setVerifier(Verifier verifier) {
+            this.verifier = verifier;
+            return this;
+        }
+
+        public AuditAPIBuilder setConverter(Converter converter) {
+            this.converter = converter;
+            return this;
+        }
+
+        public AuditAPIBuilder setFormat(DateTimeFormatter formatter) {
+            this.FORMATTER = formatter;
+            return this;
+        }
+
+        public AuditAPI build() throws IOException { return new AuditAPI(this);}
+    }
 }

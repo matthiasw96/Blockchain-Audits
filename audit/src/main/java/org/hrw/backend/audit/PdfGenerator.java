@@ -75,67 +75,65 @@ public class PdfGenerator {
 
     private float createTitle(float y, PDPageContentStream cs) throws IOException {
         cs.setFont(PDType1Font.HELVETICA_BOLD, 18);
-        y = writeLine(cs, "Audit Report – Systemmetriken", margin, y, leading);
+        y = writeLine(cs, "Audit Report – Systemmetriken", margin, y);
 
         cs.setFont(PDType1Font.HELVETICA, 11);
         y -= leading;
         return y;
     }
 
-    //TODO: Metadaten anpassen
-    private float createMetaData(float y,
+     private float createMetaData(float y,
                                  PDPageContentStream cs,
                                  String minTs,
                                  String maxTs,
                                  AuditSummary summary) throws IOException {
-        y = writeLine(cs, "1. Metadaten", margin, y, leading);
-        y = writeLine(cs, "Report-ID: " + summary.reportId(), margin + 20, y, leading);
-        y = writeLine(cs, "Audit-Tool-Version: " + summary.toolVersion(), margin + 20, y, leading);
+        y = writeLine(cs, "1. Metadaten", margin, y);
+        y = writeLine(cs, "Report-ID: " + summary.reportId(), margin + 20, y);
+        y = writeLine(cs, "Audit-Tool-Version: " + summary.toolVersion(), margin + 20, y);
         y = writeLine(cs, "Erstellungszeitpunkt: " + FORMATTER.format(Instant.now()),
-                margin + 20, y, leading);
+                margin + 20, y);
         y = writeLine(cs, "Audit-Zeitraum (Daten): " + minTs + " – " + maxTs,
-                margin + 20, y, leading);
+                margin + 20, y);
 
         y -= leading;
         return y;
     }
 
     private float createAuditContext(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
-        y = writeLine(cs, "2. Audit-Kontext", margin, y, leading);
-        y = writeLine(cs, "Datenquelle: " + summary.dataSource(), margin + 20, y, leading);
+        y = writeLine(cs, "2. Audit-Kontext", margin, y);
+        y = writeLine(cs, "Datenquelle: " + summary.dataSource(), margin + 20, y);
 
-        y = writeWrappedText(cs, "Filter: " + summary.filterInfo(),
-                    margin + 20, y, leading, 500);
+        y = writeWrappedText(cs, "Filter: " + summary.filterInfo(), y);
 
         y = writeLine(cs, "Anzahl geprüfter Datensätze: " + summary.totalRecords(),
-                margin + 20, y, leading);
+                margin + 20, y);
 
         y -= leading;
         return y;
     }
 
     private float createIntegrityResults(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
-        y = writeLine(cs, "3. Integritätsprüfung", margin, y, leading);
+        y = writeLine(cs, "3. Integritätsprüfung", margin, y);
 
         String statusText = summary.isVerified()
                 ? "Integritätsstatus: ERFOLGREICH – alle geprüften Datensätze gelten als verifiziert."
                 : "Integritätsstatus: FEHLER – mindestens ein Datensatz konnte nicht erfolgreich verifiziert werden.";
 
-        y = writeWrappedText(cs, statusText, margin + 20, y, leading, 500);
+        y = writeWrappedText(cs, statusText, y);
 
         y -= leading;
         return y;
     }
 
     private float createSummary(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
-        y = writeLine(cs, "4. Zusammenfassung", margin, y, leading);
+        y = writeLine(cs, "4. Zusammenfassung", margin, y);
 
         String summaryText = summary.isVerified()
                 ? "Im ausgewählten Zeitraum wurden alle Telemetriedaten erfolgreich über Merkle-Tree " +
                 "und Blockchain-Verankerung geprüft."
                 : "Im ausgewählten Zeitraum traten Abweichungen bei der Integritätsprüfung auf.";
 
-        y = writeWrappedText(cs, summaryText, margin + 20, y, leading, 500);
+        y = writeWrappedText(cs, summaryText, y);
         y -= leading;
         return y;
     }
@@ -143,8 +141,7 @@ public class PdfGenerator {
     private float writeLine(PDPageContentStream cs,
                             String text,
                             float x,
-                            float y,
-                            float leading) throws IOException {
+                            float y) throws IOException {
         cs.beginText();
         cs.newLineAtOffset(x, y);
         cs.showText(text);
@@ -152,13 +149,9 @@ public class PdfGenerator {
         return y - leading;
     }
 
-    //TODO: ggf. Code reviewen
     private float writeWrappedText(PDPageContentStream cs,
                                    String text,
-                                   float x,
-                                   float y,
-                                   float leading,
-                                   float maxWidth) throws IOException {
+                                   float y) throws IOException {
         String[] words = text.split(" ");
         StringBuilder line = new StringBuilder();
 
@@ -166,8 +159,8 @@ public class PdfGenerator {
             String candidate = line.isEmpty() ? word : line + " " + word;
             float textWidth = PDType1Font.HELVETICA.getStringWidth(candidate) / 1000 * 11;
 
-            if (textWidth > maxWidth) {
-                y = writeLine(cs, line.toString(), x, y, leading);
+            if (textWidth > 500) {
+                y = writeLine(cs, line.toString(), 70.0f, y);
                 line = new StringBuilder(word);
             } else {
                 line = new StringBuilder(candidate);
@@ -175,7 +168,7 @@ public class PdfGenerator {
         }
 
         if (!line.isEmpty()) {
-            y = writeLine(cs, line.toString(), x, y, leading);
+            y = writeLine(cs, line.toString(), 70.f, y);
         }
 
         return y;

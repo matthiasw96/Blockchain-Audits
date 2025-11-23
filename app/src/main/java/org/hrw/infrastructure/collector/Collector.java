@@ -34,7 +34,7 @@ public class Collector {
         this.period = builder.period;
         this.client = HttpClient.newHttpClient();
         this.FORMATTER = builder.FORMATTER;
-        this.converter = builder.converter; //TODO: Übergeben?
+        this.converter = builder.converter;
     }
 
     public List<ServerRecord> fetch(){

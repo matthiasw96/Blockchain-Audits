@@ -23,7 +23,7 @@ public class DatabaseHandler {
         this.password = builder.password;
         this.FORMATTER = builder.FORMATTER;
         this.port = builder.port;
-        this.converter = builder.converter; //TODO: Übergeben?
+        this.converter = builder.converter;
     }
 
     public List<ServerRecord> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
