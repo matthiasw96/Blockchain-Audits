@@ -10,23 +10,21 @@ import java.util.Date;
 import java.util.function.Consumer;
 
 public class UserInterface extends JFrame {
-    private Consumer<Config> onStart;
+    private Consumer<UIConfig> onConfirm;
+    private Runnable onStart;
     private Runnable onStop;
 
-    private final JTextField hostServer = new JTextField("192.168.250.55");
-    private final JTextField userServer = new JTextField("root");
+    private final JTextField userServer = new JTextField();
     private final JPasswordField passServer = new JPasswordField();
 
-    private final JTextField hostDb = new JTextField("192.168.250.51");
-    private final JTextField userDb = new JTextField("postgres");
+    private final JTextField userDb = new JTextField();
     private final JPasswordField passDb = new JPasswordField();
 
-    private final String[] options = {"TESTNET","STAGENET","MAINNET"};
     private final JTextField seedPhraseAnchor = new JTextField();
-    private final JComboBox<String> environmentAnchor = new JComboBox<>(options);
 
     private final JFormattedTextField dateOfFirstExecution = dateTimeField();
 
+    private final  JButton confirmBtn = new JButton("Confirm");
     private final JButton startBtn = new JButton("Start");
     private final JButton stopBtn = new JButton("Stop");
     private final JButton logViewerBtn = new JButton("Log Viewer");
@@ -49,18 +47,15 @@ public class UserInterface extends JFrame {
 
         int row = 0;
         row = sectionLabel(content, g, row, "Server");
-        row = addRow(content, g, row, "Host Server", hostServer);
         row = addRow(content, g, row, "User Server", userServer);
         row = addRow(content, g, row, "Password Server", passServer);
 
         row = sectionLabel(content, g, row, "Database");
-        row = addRow(content, g, row, "Host Database", hostDb);
         row = addRow(content, g, row, "User Database", userDb);
         row = addRow(content, g, row, "Pass Database", passDb);
 
         row = sectionLabel(content, g, row, "Anchor Service");
         row = addRow(content, g, row, "Seed Phrase Anchor", seedPhraseAnchor);
-        row = addRow(content, g, row, "Environment Anchor", environmentAnchor);
 
         row = sectionLabel(content, g, row, "Schedule");
         row = addRow(content, g, row, "Date Of First Execution (yyyy-MM-dd HH:mm:ss)", dateOfFirstExecution);
@@ -68,6 +63,7 @@ public class UserInterface extends JFrame {
         add(content, BorderLayout.CENTER);
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 8));
+        controls.add(confirmBtn);
         controls.add(startBtn);
         controls.add(stopBtn);
         controls.add(logViewerBtn);
@@ -75,11 +71,11 @@ public class UserInterface extends JFrame {
         controls.add(status);
         add(controls, BorderLayout.SOUTH);
 
-        // Initial states
+        startBtn.setEnabled(false);
         stopBtn.setEnabled(false);
         dateOfFirstExecution.setValue(new Date());
 
-        // Actions
+        confirmBtn.addActionListener(this::onConfirm);
         startBtn.addActionListener(this::onStart);
         stopBtn.addActionListener(this::onStop);
         logViewerBtn.addActionListener(this::onOpenLogViewer);
@@ -88,16 +84,21 @@ public class UserInterface extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    private void onStart(ActionEvent e) {
+    private void onConfirm(ActionEvent e) {
         try {
-            Config cfg = readConfig();
-            status.setText("Running (every 5 minutes)");
-            startBtn.setEnabled(false);
-            stopBtn.setEnabled(true);
-            this.onStart.accept(cfg);
+            UIConfig cfg = readConfig();
+            this.onConfirm.accept(cfg);
+            confirmBtn.setEnabled(false);
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Invalid input", JOptionPane.WARNING_MESSAGE);
         }
+    }
+
+    private void onStart(ActionEvent e) {
+        status.setText("Running (every 5 minutes)");
+        startBtn.setEnabled(false);
+        stopBtn.setEnabled(true);
+        this.onStart.run();
     }
 
     private void onStop(ActionEvent e) {
@@ -117,21 +118,18 @@ public class UserInterface extends JFrame {
         dlg.setVisible(true);
     }
 
-    private Config readConfig() {
-        String hostSrv = reqText(hostServer, "Host Server");
+    private UIConfig readConfig() {
         String userSrv = reqText(userServer, "User Server");
         String passSrv = new String(passServer.getPassword());
 
-        String hDb = reqText(hostDb, "Host Database");
         String uDb = reqText(userDb, "User Database");
         String pDbPass = new String(passDb.getPassword());
 
         String seedPhrase = reqText(seedPhraseAnchor, "Seed Phrase Anchor");
-        String environment = environmentAnchor.getSelectedItem().toString();
 
         Date first = (Date) dateOfFirstExecution.getValue();
 
-        return new Config(hostSrv, userSrv, passSrv, hDb, uDb, pDbPass, seedPhrase, environment, first);
+        return new UIConfig(userSrv, passSrv, uDb, pDbPass, seedPhrase, first);
     }
 
     private static String reqText(JTextField field, String name) {
@@ -174,13 +172,15 @@ public class UserInterface extends JFrame {
         return field;
     }
 
-    public record Config(
-            String hostServer, String userServer, String passServer,
-            String hostDb, String userDb, String passDb, String seedPhraseAnchor, String environmentAnchor,
+    public record UIConfig(
+            String userServer, String passServer,
+            String userDb, String passDb,
+            String seedPhraseAnchor,
             Date dateOfFirstExecution
     ) {
     }
-
-    public void setOnStart(Consumer<Config> handler) { this.onStart = handler; }
+    public void setStartEnabled(boolean enabled) { startBtn.setEnabled(enabled); }
+    public void setOnStart(Runnable handler) { this.onStart = handler; }
+    public void setOnConfirm(Consumer<UIConfig> handler) { this.onConfirm = handler; }
     public void setOnStop(Runnable handler) { this.onStop = handler; }
 }

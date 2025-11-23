@@ -23,21 +23,17 @@ public class AnchorService {
     private final byte networkChainId;
     private final Node node;
     private final DateTimeFormatter FORMATTER;
-    private final int interval;
 
     public AnchorService(AnchorServiceBuilder builder) {
         this.privateKey = builder.privateKey;
         this.networkChainId = builder.networkChainId;
         this.node = builder.node;
         this.FORMATTER = builder.FORMATTER;
-        this.interval = builder.interval;
     }
 
     public void anchorData(List<HashRecord> hashedData) {
         for(HashRecord hashEntry : hashedData) {
-            long timestamp = Long.parseLong(hashEntry.timestamp());
-
-            if(timestamp % (interval * 60L) == 0) {
+            if(!hashEntry.rootHash().isEmpty()) {
                 anchorHashTree(hashEntry);
             }
         }
@@ -72,7 +68,6 @@ public class AnchorService {
         byte networkChainId;
         Node node;
         DateTimeFormatter FORMATTER;
-        int interval;
 
         public AnchorServiceBuilder setPrivateKey(String seedPhrase) {
             this.privateKey = PrivateKey.fromSeed(seedPhrase);
@@ -85,17 +80,12 @@ public class AnchorService {
         }
 
         public AnchorServiceBuilder setNode(String url) throws NodeException, URISyntaxException, IOException {
-            this.node = new Node(url);
+            this.node = new Node("https://"+url);
             return this;
         }
 
         public AnchorServiceBuilder setFormatter(DateTimeFormatter FORMATTER) {
             this.FORMATTER = FORMATTER;
-            return this;
-        }
-
-        public AnchorServiceBuilder setInterval(int interval) {
-            this.interval = interval;
             return this;
         }
 

@@ -17,13 +17,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 
-public class AuditPdfCreator {
+public class PdfGenerator {
 
     private final DateTimeFormatter FORMATTER;
     private final float margin = 50;
     private final float leading = 14;
 
-    public AuditPdfCreator(DateTimeFormatter FORMATTER) {
+    public PdfGenerator(DateTimeFormatter FORMATTER) {
         this.FORMATTER = FORMATTER;
     }
 
@@ -73,6 +73,7 @@ public class AuditPdfCreator {
         return formatUnixSeconds(unixTimestamp);
     }
 
+    //TODO: Titel anpassen
     private float createTitle(float y, PDPageContentStream cs) throws IOException {
         cs.setFont(PDType1Font.HELVETICA_BOLD, 18);
         y = writeLine(cs, "Audit Report – Telemetriedaten", margin, y, leading);
@@ -82,6 +83,7 @@ public class AuditPdfCreator {
         return y;
     }
 
+    //TODO: Metadaten anpassen
     private float createMetaData(float y,
                                  PDPageContentStream cs,
                                  String minTs,
@@ -99,14 +101,13 @@ public class AuditPdfCreator {
         return y;
     }
 
+    //TODO: Kontext anpassen
     private float createAuditContext(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
         y = writeLine(cs, "2. Audit-Kontext", margin, y, leading);
         y = writeLine(cs, "Datenquelle: " + summary.dataSource(), margin + 20, y, leading);
 
-        if (summary.filterInfo() != null && !summary.filterInfo().isBlank()) {
-            y = writeWrappedText(cs, "Filter: " + summary.filterInfo(),
+        y = writeWrappedText(cs, "Filter: " + summary.filterInfo(),
                     margin + 20, y, leading, 500);
-        }
 
         y = writeLine(cs, "Anzahl geprüfter Datensätze: " + summary.totalRecords(),
                 margin + 20, y, leading);
@@ -115,6 +116,7 @@ public class AuditPdfCreator {
         return y;
     }
 
+    //TODO: Integritätsergebnisse anpassen
     private float createIntegrityResults(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
         y = writeLine(cs, "3. Integritätsprüfung", margin, y, leading);
 
@@ -128,6 +130,7 @@ public class AuditPdfCreator {
         return y;
     }
 
+    //TODO: Zusammenfassung anpassen
     private float createSummary(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
         y = writeLine(cs, "4. Zusammenfassung", margin, y, leading);
 
@@ -153,6 +156,7 @@ public class AuditPdfCreator {
         return y - leading;
     }
 
+    //TODO: ggf. Code reviewen
     private float writeWrappedText(PDPageContentStream cs,
                                    String text,
                                    float x,

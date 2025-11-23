@@ -14,6 +14,7 @@ public class DatabaseHandler {
     private final String username;
     private final String password;
     private final Converter converter;
+    private final int port;
     private final DateTimeFormatter FORMATTER;
 
     public DatabaseHandler(DatabaseHandlerBuilder builder) {
@@ -21,7 +22,8 @@ public class DatabaseHandler {
         this.username = builder.username;
         this.password = builder.password;
         this.FORMATTER = builder.FORMATTER;
-        this.converter = new Converter();
+        this.port = builder.port;
+        this.converter = builder.converter; //TODO: Übergeben?
     }
 
     public List<ServerRecord> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
@@ -52,7 +54,7 @@ public class DatabaseHandler {
     }
 
     private Statement createStatement() throws SQLException {
-        String url = "jdbc:postgresql://" + hostAddress + ":5432/postgres";
+        String url = "jdbc:postgresql://" + hostAddress + ":"+port+"/postgres";
         Connection connection = DriverManager.getConnection(url, username, password);
         return connection.createStatement();
     }
@@ -87,10 +89,17 @@ public class DatabaseHandler {
         String hostAddress;
         String username;
         String password;
+        int port;
+        Converter converter;
         DateTimeFormatter FORMATTER;
 
         public DatabaseHandlerBuilder setHostAddress(String hostAddress) {
             this.hostAddress = hostAddress;
+            return this;
+        }
+
+        public DatabaseHandlerBuilder setPort(int port) {
+            this.port = port;
             return this;
         }
 
@@ -101,6 +110,11 @@ public class DatabaseHandler {
 
         public DatabaseHandlerBuilder setPassword(String password) {
             this.password = password;
+            return this;
+        }
+
+        public DatabaseHandlerBuilder setConverter(Converter converter) {
+            this.converter = converter;
             return this;
         }
 

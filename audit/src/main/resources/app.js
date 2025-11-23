@@ -6,27 +6,15 @@ let hasData = false;
 document.addEventListener("DOMContentLoaded", init);
 
 function init() {
-    const hostInput = document.getElementById("host");
-    const wavesAddressInput = document.getElementById("wavesAddress");
-    const wavesNetSelect = document.getElementById("wavesNet");
-
     const rangeForm = document.getElementById("rangeForm");
     const startDateInput = document.getElementById("startDate");
     const startTimeInput = document.getElementById("startTime");
     const endDateInput = document.getElementById("endDate");
     const endTimeInput = document.getElementById("endTime");
 
-    const btnSubmit = document.getElementById("btnSubmit");
-    const btnApply = document.getElementById("btnApply");
     const btnVerify = document.getElementById("btnVerify");
     const btnDownloadData = document.getElementById("btnDownloadData");
     const btnDownloadReport = document.getElementById("btnDownloadReport");
-
-    if (btnSubmit) {
-        btnSubmit.addEventListener("click", (event) =>
-            handleSubmitButton(event, { hostInput, wavesAddressInput, wavesNetSelect, btnApply })
-        );
-    }
 
     if (rangeForm) {
         rangeForm.addEventListener("submit", (event) =>
@@ -45,32 +33,8 @@ function init() {
     }
 }
 
-async function handleSubmitButton(event, deps) {
-    event.preventDefault();
-
-    const payload = createPayload(deps);
-
-    try {
-        const response =  await sendPostRequest(JSON.stringify(payload));
-
-        const data = await response.json();
-
-        console.log(data)
-
-        if (data.status === "OK") {
-            updateStatus(true, "Submitted","submitStatus");
-            isConnected = true;
-        }
-    } catch (err) {
-        console.error("Setup-Request fehlgeschlagen:", err);
-        updateStatus(false, "Failed to connect to backend","submitStatus");
-    }
-}
-
 async function handleApplySubmit(event, deps) {
     event.preventDefault();
-
-    if(!checkConnection()) {return}
 
     const url = createUrl(deps)
 
@@ -96,7 +60,6 @@ async function handleApplySubmit(event, deps) {
 async function handleVerifyClick(event) {
     event.preventDefault();
 
-    if(!checkConnection()) {return}
     if(!checkData()) {return}
 
     try{
@@ -124,7 +87,6 @@ async function handleVerifyClick(event) {
 async function handleDownloadDataClick(event) {
     event.preventDefault();
 
-    if(!checkConnection()) {return}
     if(!checkData()) {return}
 
     try{
@@ -141,7 +103,6 @@ async function handleDownloadDataClick(event) {
 async function handleDownloadReportClick(event) {
     event.preventDefault();
 
-    if(!checkConnection()) {return}
     if(!checkData()) {return}
 
     try{
@@ -169,30 +130,6 @@ function sendGetRequest(url, accept) {
     }
 }
 
-function sendPostRequest(json) {
-    try{
-        return fetch("/setup", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: json
-        });
-    } catch (err) {
-        console.error("POST request failed:", err);
-        throw err;
-    }
-}
-
-function checkConnection() {
-    if (!isConnected) {
-        popup("Please submit the connection details first");
-        return false;
-    }
-    return true;
-}
-
 function checkData() {
     if (!hasData) {
         popup("Please select data range first!");
@@ -213,15 +150,6 @@ function updateStatus(ok, message, element) {
         statusEl.classList.add("status--error");
         statusEl.textContent = message;
     }
-}
-
-function createPayload(deps) {
-    const { hostInput, wavesAddressInput, wavesNetSelect} = deps;
-    return {
-        bhUri: wavesNetSelect?.value || "",
-        bhAddress: wavesAddressInput?.value || "",
-        collectorUri: hostInput?.value || ""
-    };
 }
 
 function createUrl(deps) {

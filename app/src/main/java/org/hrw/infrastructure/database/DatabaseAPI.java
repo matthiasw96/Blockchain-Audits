@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -22,18 +23,22 @@ public class DatabaseAPI implements AutoCloseable {
     private DatabaseHandler db;
     private Gson gson;
     private ZoneId zoneId;
+    private final DateTimeFormatter FORMATTER;
 
-    public DatabaseAPI(int port, DatabaseHandler db) throws IOException {
+    public DatabaseAPI(int port, DatabaseHandler db, DateTimeFormatter FORMATTER) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newSingleThreadExecutor());
         this.db = db;
         this.gson = new Gson();
         this.zoneId = ZoneId.of("Europe/Berlin");
+        this.FORMATTER = FORMATTER;
         createContexts();
     }
 
     private void createContexts() {
         server.createContext("/selectData", this::handleSelectData);
+
+        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Database API running");
     }
 
     private void handleSelectData(HttpExchange exchange) throws IOException {
@@ -64,6 +69,7 @@ public class DatabaseAPI implements AutoCloseable {
         }
     }
 
+    //TODO: Anpassung Intervall
     private ZonedDateTime calculateStart(String start) {
         ZonedDateTime startDate = parseDate(start);
         int minute = startDate.getMinute();
@@ -71,6 +77,7 @@ public class DatabaseAPI implements AutoCloseable {
         return startDate.minusMinutes(minutesToSubtract).withSecond(0);
     }
 
+    //TODO: Anpassung Intervall
     private ZonedDateTime calculateEnd(String end) {
         ZonedDateTime endDate = parseDate(end);
         int minute = endDate.getMinute();
@@ -86,6 +93,7 @@ public class DatabaseAPI implements AutoCloseable {
         return gson.toJson(new DataResponse(data.size(), data));
     }
 
+    //TODO: Code und Nachricht immer gleich...
     private String jsonError(String code, String msg) {
         return gson.toJson(new ErrorResponse(code, msg));
     }

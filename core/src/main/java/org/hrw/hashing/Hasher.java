@@ -16,12 +16,15 @@ public class Hasher {
     private List<String> minuteHashes;
     private final DateTimeFormatter FORMATTER;
     private final int interval;
+    private final String algorithm;
 
-    public Hasher(int interval, DateTimeFormatter FORMATTER) {
+
+    public Hasher(int interval, DateTimeFormatter FORMATTER, String algorithm) {
         this.secondHashes = new ArrayList<>();
         this.minuteHashes = new ArrayList<>();
         this.FORMATTER = FORMATTER;
         this.interval = interval;
+        this.algorithm = algorithm; //TODO: Übernahme aus Konfig
     }
 
     public List<HashRecord> hashData(List<ServerRecord> data) {
@@ -54,7 +57,7 @@ public class Hasher {
     }
 
     public String createEntryHash(String data) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
         byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
         return HexFormat.of().formatHex(hash);
     }
@@ -84,7 +87,7 @@ public class Hasher {
     }
 
     private String createHashTree(List<String> data) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
         for (String row : data) {
             byte[] entryBytes = row.getBytes(StandardCharsets.UTF_8);
             digest.update(entryBytes);

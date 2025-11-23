@@ -6,21 +6,28 @@ import java.util.TimerTask;
 
 public class Scheduler {
     Timer timer;
-    TimerTask timerTask;
+    Processor processor;
     int timePeriod;
 
-    public Scheduler(TimerTask timerTask, int timePeriod) {
-        timer = new Timer();
-        this.timerTask = timerTask;
+    public Scheduler(Processor processor, int timePeriod) {
+        this.processor = processor;
         this.timePeriod = timePeriod;
     }
 
     public void executeTimer(Date firstExecution) {
+        timer = new Timer();
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                processor.run();
+            }
+        };
         timer.schedule(timerTask, firstExecution, timePeriod * 1000L);
     }
 
     public void stop(){
         timer.cancel();
+        timer = null;
     }
 }
 

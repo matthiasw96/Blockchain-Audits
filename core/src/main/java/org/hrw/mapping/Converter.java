@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -29,8 +31,11 @@ import java.util.stream.IntStream;
 public class Converter {
     private final Map<String,String> map;
     private final ObjectMapper mapper;
+    private final Path path;
 
-    public Converter() {
+    //TODO: Übernahme map.csv aus Konfigdatei
+    public Converter(String path) {
+        this.path = Path.of(path);
         this.map = this.createColumnMap();
         this.mapper = new ObjectMapper();
     }
@@ -193,11 +198,10 @@ public class Converter {
     }
 
     private Map<String, String> createColumnMap() {
-        try (InputStream in = Converter.class.getResourceAsStream("/map.csv");
+        try (InputStream in = Files.newInputStream(path);
              BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-            Map<String, String> serverMap = readLines(reader);
 
-            return serverMap;
+            return readLines(reader);
         } catch (IOException e) {
             e.printStackTrace();
         }

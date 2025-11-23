@@ -20,7 +20,7 @@ import java.util.*;
 
 public class Collector {
     private final HttpClient client;
-    private final String uri;
+    private final String hostAddress;
     private final String user;
     private final String pass;
     private final int period;
@@ -28,13 +28,13 @@ public class Collector {
     private final Converter converter;
 
     public Collector(CollectorBuilder builder) {
-        this.uri = builder.uri;
+        this.hostAddress = builder.hostAddress;
         this.user = builder.user;
         this.pass = builder.pass;
         this.period = builder.period;
         this.client = HttpClient.newHttpClient();
         this.FORMATTER = builder.FORMATTER;
-        this.converter = new Converter();
+        this.converter = builder.converter; //TODO: Übergeben?
     }
 
     public List<ServerRecord> fetch(){
@@ -64,7 +64,7 @@ public class Collector {
 
     private HttpRequest createRequest(String auth) {
         return HttpRequest.newBuilder()
-                .uri(URI.create("http://"+uri+"/rrd_updates?start=-" + period))
+                .uri(URI.create("http://"+ hostAddress +"/rrd_updates?start=-" + period))
                 .header("Authorization", "Basic " + auth)
                 .GET()
                 .build();
@@ -78,14 +78,15 @@ public class Collector {
     }
 
     public static class CollectorBuilder {
-        String uri;
+        String hostAddress;
         String user;
         String pass;
         int period;
+        Converter converter;
         DateTimeFormatter FORMATTER;
 
-        public CollectorBuilder setUri(String uri) {
-            this.uri = uri;
+        public CollectorBuilder setHostAddress(String hostAddress) {
+            this.hostAddress = hostAddress;
             return this;
         }
 
@@ -101,6 +102,11 @@ public class Collector {
 
         public CollectorBuilder setPeriod(int period) {
             this.period = period;
+            return this;
+        }
+
+        public CollectorBuilder setConverter(Converter converter) {
+            this.converter = converter;
             return this;
         }
 

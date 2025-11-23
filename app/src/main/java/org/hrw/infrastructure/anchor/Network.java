@@ -19,9 +19,9 @@ public enum Network {
 
     public static Network parse(String s) {
         return switch (s) {
-            case "MAINNET" -> MAINNET;
-            case "TESTNET" -> TESTNET;
-            case "STAGENET" -> STAGENET;
+            case "MAIN" -> MAINNET;
+            case "TEST" -> TESTNET;
+            case "STAGE" -> STAGENET;
             default -> TESTNET;
         };
     }

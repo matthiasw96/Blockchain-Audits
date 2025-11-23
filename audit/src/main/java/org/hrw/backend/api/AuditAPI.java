@@ -1,16 +1,13 @@
 package org.hrw.backend.api;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import org.hrw.backend.audit.AuditPdfCreator;
+import org.hrw.backend.audit.PdfGenerator;
 import org.hrw.backend.audit.AuditSummary;
 import org.hrw.backend.datacollector.DataCollector;
-import org.hrw.backend.verifier.BlockchainHandler;
 import org.hrw.backend.verifier.Verifier;
 import org.hrw.datamodels.ServerRecord;
-import org.hrw.hashing.Hasher;
 import org.hrw.mapping.Converter;
 
 import java.io.IOException;
@@ -25,31 +22,36 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class AuditAPI implements AutoCloseable {
-    private HttpServer server;
-    private DataCollector dataCollector;
-    private Verifier verifier;
-    private Converter converter;
-    private Gson gson;
+    private final HttpServer server;
+    private final DataCollector dataCollector;
+    private final Verifier verifier;
+    private final Converter converter;
+    private final Gson gson;
     private ZonedDateTime startDate;
     private ZonedDateTime endDate;
     private boolean isVerified;
     private List<ServerRecord> data;
-    private AuditPdfCreator pdfCreator;
-    private DateTimeFormatter FORMATTER;
+    private final PdfGenerator pdfCreator;
+    private final DateTimeFormatter FORMATTER;
 
-    public AuditAPI(DateTimeFormatter FORMATTER) throws IOException {
+    public AuditAPI(
+            DataCollector dataCollector,
+            Verifier verifier,
+            Converter converter,
+            DateTimeFormatter FORMATTER) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(8000), 0);
+        this.dataCollector = dataCollector;
+        this.verifier = verifier;
+        this.converter = converter;
         this.FORMATTER = FORMATTER;
-        this.converter = new Converter();
         this.gson = new Gson();
-        this.pdfCreator = new AuditPdfCreator(FORMATTER);
+        this.pdfCreator = new PdfGenerator(FORMATTER);
         createContexts();
         System.out.println("Server started at localhost:8000");
     }
 
     private void createContexts() {
         server.createContext("/", this::handleStatic);
-        server.createContext("/setup", this::handleSetup);
         server.createContext("/selectData", this::handleSelectData);
         server.createContext("/verifyData", this::handleVerifyData);
         server.createContext("/downloadData", this::handleDownloadData);
@@ -68,23 +70,6 @@ public class AuditAPI implements AutoCloseable {
         respond(httpExchange, contentType, 200, bytes);
         is.close();
         httpExchange.close();
-    }
-
-    private void handleSetup(HttpExchange httpExchange) throws IOException {
-        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Setting up backend");
-
-        String body = readRequestBody(httpExchange);
-        JsonObject json = gson.fromJson(body, JsonObject.class);
-
-        String bhUri = json.get("bhUri").getAsString();
-        String bhAddress = json.get("bhAddress").getAsString();
-        String collectorUri = json.get("collectorUri").getAsString();
-
-        setup(bhUri, bhAddress, collectorUri);
-        respond(httpExchange, "application/json", 200, jsonResponse("OK", "Setup completed"));
-        httpExchange.close();
-
-        System.out.println(LocalDateTime.now().format(FORMATTER) + ": Backend set");
     }
 
     private void handleSelectData(HttpExchange httpExchange) throws IOException {
@@ -150,19 +135,6 @@ public class AuditAPI implements AutoCloseable {
         if (resourceName.endsWith(".css"))  return "text/css; charset=utf-8";
         if (resourceName.endsWith(".js"))   return "application/javascript; charset=utf-8";
         return "application/octet-stream";
-    }
-
-    private String readRequestBody(HttpExchange exchange) throws IOException {
-        try (InputStream is = exchange.getRequestBody()) {
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
-    private void setup(String bhUri, String bhAddress, String collectorUri) {
-        dataCollector = new DataCollector(collectorUri, converter, FORMATTER);
-        BlockchainHandler handler = new BlockchainHandler(bhUri, bhAddress, FORMATTER);
-        Hasher hasher = new Hasher(30, FORMATTER);
-        verifier = new Verifier(hasher, handler, FORMATTER);
     }
 
     private AuditSummary createSummary() {

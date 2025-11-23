@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 
-public class Processor extends TimerTask {
+public class Processor {
     private final Collector collector;
     private final AnchorService anchorService;
     private final DatabaseHandler dbHandler;

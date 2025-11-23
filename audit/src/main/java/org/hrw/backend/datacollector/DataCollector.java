@@ -13,12 +13,14 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+//TODO: Port datenbank
 public class DataCollector {
     private final HttpClient client;
     private final String uri;
     private final Converter converter;
     private final DateTimeFormatter FORMATTER;
 
+    //TODO: Port datenbank
     public DataCollector(String uri, Converter converter, DateTimeFormatter FORMATTER) {
         this.client = HttpClient.newHttpClient();
         this.uri = uri;
@@ -42,6 +44,7 @@ public class DataCollector {
         return response.body();
     }
 
+    //TODO: Port Datenbank
     private HttpRequest createRequest(ZonedDateTime start, ZonedDateTime end) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         String url = "http://"+uri+":8080/selectData?startDate="+start.format(formatter)+"&endDate="+end.format(formatter);
