@@ -19,6 +19,19 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+/**
+ * Provides an HTTP API for external components
+ * to query server telemetry data stored in the database.
+ *
+ * <p>The API exposes the endpoint {@code /selectData}, which accepts
+ * a start and end timestamp and returns matching {@link ServerRecord} entries
+ * as JSON. Time boundaries are aligned to the configured interval to ensure
+ * consistent batching with the data collection process.</p>
+ *
+ * <p>This class uses the internal {@link DatabaseHandler} to access the database
+ * and wraps responses using small JSON record classes. It runs on a single-threaded
+ * HTTP server and implements {@link AutoCloseable} for clean shutdown.</p>
+ */
 public class DatabaseAPI implements AutoCloseable {
     private final HttpServer server;
     private final DatabaseHandler db;
@@ -27,7 +40,7 @@ public class DatabaseAPI implements AutoCloseable {
     private final Gson gson;
     private final ZoneId zoneId;
 
-    public DatabaseAPI(DatabaseAPIbuilder builder) {
+    public DatabaseAPI(DatabaseAPIBuilder builder) {
         this.server = builder.server;
         server.setExecutor(Executors.newSingleThreadExecutor());
         this.db = builder.dbHandler;
@@ -38,12 +51,26 @@ public class DatabaseAPI implements AutoCloseable {
         createContexts();
     }
 
+
+    /**
+     * Registers all HTTP endpoints of the Database API.
+     */
     private void createContexts() {
         server.createContext("/selectData", this::handleSelectData);
-
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Database API running");
     }
 
+    /**
+     * Handles the {@code /selectData} request by:
+     * <ol>
+     *     <li>Parsing start/end timestamps from query parameters</li>
+     *     <li>Aligning them to interval boundaries</li>
+     *     <li>Retrieving matching {@link ServerRecord} entries from the database</li>
+     *     <li>Returning the data as JSON</li>
+     * </ol>
+     *
+     * Responds with status 500 if an SQL error occurs.
+     */
     private void handleSelectData(HttpExchange exchange) throws IOException {
         String query = exchange.getRequestURI().getQuery();
         String start = query.split("&")[0].split("=")[1];
@@ -63,6 +90,13 @@ public class DatabaseAPI implements AutoCloseable {
         }
     }
 
+    /**
+     * Sends an HTTP response with JSON body, status code and UTF-8 encoding.
+     *
+     * @param ex     the exchange object
+     * @param status HTTP status code
+     * @param body   JSON body to send
+     */
     private void respond(HttpExchange ex, int status, String body) throws IOException {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         ex.getResponseHeaders().set("Content-Type", "application/json");
@@ -72,6 +106,12 @@ public class DatabaseAPI implements AutoCloseable {
         }
     }
 
+    /**
+     * Calculates and floors the start timestamp to the next lower anchor interval boundary.
+     *
+     * @param start timestamp string in {@link LocalDateTime#parse(CharSequence)} format
+     * @return floored start timestamp
+     */
     private ZonedDateTime calculateStart(String start) {
         ZonedDateTime startDate = parseDate(start);
 
@@ -84,6 +124,12 @@ public class DatabaseAPI implements AutoCloseable {
                 .withNano(0);
     }
 
+    /**
+     * Calculates and ceilings the end timestamp to the next upper anchor interval boundary.
+     *
+     * @param end timestamp string in {@link LocalDateTime#parse(CharSequence)} format
+     * @return ceiled end timestamp
+     */
     private ZonedDateTime calculateEnd(String end) {
         ZonedDateTime endDate = parseDate(end);
 
@@ -96,55 +142,80 @@ public class DatabaseAPI implements AutoCloseable {
                 .withNano(0);
     }
 
+    /**
+     * Parses a timestamp string and normalizes it to minute precision.
+     */
     private ZonedDateTime parseDate(String date) {
         return LocalDateTime.parse(date)
                 .atZone(zoneId)
                 .truncatedTo(ChronoUnit.MINUTES);
     }
 
-
-    private String jsonData(List<ServerRecord> data) {
-        return gson.toJson(new DataResponse(data.size(), data));
-    }
-
-    private String jsonError(String code, String msg) {
-        return gson.toJson(new ErrorResponse(code, msg));
-    }
-
-    public void start() {
-        server.start();
-    }
-
+    /**
+     * Stops the API and shuts down the underlying HTTP server.
+     */
     @Override
     public void close() {
         server.stop(0);
     }
 
+    /**
+     * Starts the embedded HTTP server.
+     */
+    public void start() {
+        server.start();
+    }
+
+    /**
+     * Wraps database results in a compact JSON response object.
+     */
+    private String jsonData(List<ServerRecord> data) {
+        return gson.toJson(new DataResponse(data.size(), data));
+    }
+
+    /**
+     * Creates a standardized JSON error message.
+     */
+    private String jsonError(String code, String msg) { return gson.toJson(new ErrorResponse(code, msg)); }
+
+    /**
+     * JSON wrapper containing the number of returned records and the data itself.
+     */
     private record DataResponse(int count, List<ServerRecord> data) {}
+
+    /**
+     * JSON wrapper containing error information.
+     */
     private record ErrorResponse(String error, String message) {}
 
-    public static class DatabaseAPIbuilder {
+    /**
+     * Builder for constructing {@link DatabaseAPI} instances.
+     *
+     * <p>Allows configuration of server port, database handler, anchor interval
+     * and logging date format.</p>
+     */
+    public static class DatabaseAPIBuilder {
         private HttpServer server;
         private DatabaseHandler dbHandler;
-        private DateTimeFormatter FORMATTER;
         private int interval;
+        private DateTimeFormatter FORMATTER;
 
-        public DatabaseAPIbuilder setDbHandler(DatabaseHandler dbHandler) {
+        public DatabaseAPIBuilder setDbHandler(DatabaseHandler dbHandler) {
             this.dbHandler = dbHandler;
             return this;
         }
 
-        public DatabaseAPIbuilder setServer(int port) throws IOException {
+        public DatabaseAPIBuilder setServer(int port) throws IOException {
             this.server = HttpServer.create(new InetSocketAddress(port), 0);
             return this;
         }
 
-        public DatabaseAPIbuilder setInterval(int interval) {
+        public DatabaseAPIBuilder setInterval(int interval) {
             this.interval = interval;
             return this;
         }
 
-        public DatabaseAPIbuilder setFormatter(DateTimeFormatter FORMATTER) {
+        public DatabaseAPIBuilder setFormatter(DateTimeFormatter FORMATTER) {
             this.FORMATTER = FORMATTER;
             return this;
         }

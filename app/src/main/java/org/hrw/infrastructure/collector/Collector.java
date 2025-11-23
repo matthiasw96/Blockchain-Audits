@@ -18,6 +18,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * Collects telemetry data from a remote server and converts it into
+ * {@link ServerRecord} objects.
+ *
+ * <p>This class retrieves XML-based data from a server endpoint,
+ * parses it into a DOM {@link Document}, and delegates conversion to the
+ * {@link Converter}. It is used by the processing pipeline to retrieve
+ * server metrics before they are hashed and anchored.</p>
+ *
+ * <p>The collector is configured using a {@link CollectorBuilder} to supply
+ * host address, credentials, query parameters and formatting options.</p>
+ */
 public class Collector {
     private final HttpClient client;
     private final String hostAddress;
@@ -37,6 +49,15 @@ public class Collector {
         this.converter = builder.converter;
     }
 
+    /**
+     * Fetches telemetry data from the configured server, parses it as XML
+     * and converts it into a list of {@link ServerRecord}.
+     *
+     * <p>All failures are logged and result in a {@code null} return value to
+     * avoid disrupting the processing pipeline.</p>
+     *
+     * @return list of parsed server records, or {@code null} if retrieval fails
+     */
     public List<ServerRecord> fetch(){
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Fetching server data...");
@@ -54,22 +75,43 @@ public class Collector {
         return null;
     }
 
+    /**
+     * Sends an authenticated HTTP request to the server and retrieves the raw XML data.
+     *
+     * @return the raw server response body as a string
+     * @throws IOException          if the request cannot be sent
+     * @throws InterruptedException if the request is interrupted
+     */
     private String getServerData() throws IOException, InterruptedException {
-        String auth = user+ ":" + pass;
-        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
-        HttpRequest request = createRequest(encodedAuth);
+        HttpRequest request = createRequest();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
 
-    private HttpRequest createRequest(String auth) {
+    /**
+     * Builds an authenticated {@link HttpRequest} for fetching server data.
+     *
+     * @return a prepared HTTP request
+     */
+    private HttpRequest createRequest() {
+        String auth = user+ ":" + pass;
+        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
         return HttpRequest.newBuilder()
                 .uri(URI.create("http://"+ hostAddress +"/rrd_updates?start=-" + period))
-                .header("Authorization", "Basic " + auth)
+                .header("Authorization", "Basic " + encodedAuth)
                 .GET()
                 .build();
     }
 
+    /**
+     * Parses an XML string into a DOM {@link Document}.
+     *
+     * @param input the XML content as a string
+     * @return DOM representation of the XML
+     * @throws ParserConfigurationException if the XML parser cannot be configured
+     * @throws IOException                  if parsing fails
+     * @throws SAXException                 if the XML is malformed
+     */
     private Document buildXmlDoc(String input) throws ParserConfigurationException, IOException, SAXException {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(input.getBytes());
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -77,6 +119,12 @@ public class Collector {
         return builder.parse(inputStream);
     }
 
+    /**
+     * Builder for {@link Collector} instances.
+     *
+     * <p>Allows configuring server address, credentials, query period,
+     * converter implementation and log formatting.</p>
+     */
     public static class CollectorBuilder {
         String hostAddress;
         String user;

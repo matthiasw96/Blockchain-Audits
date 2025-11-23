@@ -9,6 +9,25 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Consumer;
 
+/**
+ * Graphical user interface for the configuration of the data collection and blockchain
+ * anchoring application.
+ *
+ * <p>This window allows the user to configure:</p>
+ * <ul>
+ *     <li>server credentials</li>
+ *     <li>database credentials</li>
+ *     <li>anchor service seed phrase</li>
+ *     <li>execution schedule</li>
+ * </ul>
+ *
+ * <p>Additionally, buttons allow starting/stopping the processor job and
+ * opening a log viewer.</p>
+ *
+ * <p>User actions trigger handlers provided via
+ * {@link #setOnConfirm(Consumer)}, {@link #setOnStart(Runnable)} and
+ * {@link #setOnStop(Runnable)}.</p>
+ */
 public class UserInterface extends JFrame {
     private Consumer<UIConfig> onConfirm;
     private Runnable onStart;
@@ -31,6 +50,10 @@ public class UserInterface extends JFrame {
 
     private final JLabel status = new JLabel("Idle");
 
+    /**
+     * Builds the full graphical configuration interface, initializes layout,
+     * registers event handlers and prepares UI elements.
+     */
     public UserInterface() {
         super("Blockchain Audits – Config");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -84,6 +107,10 @@ public class UserInterface extends JFrame {
         setLocationRelativeTo(null);
     }
 
+    /**
+     * Handles the "Confirm" button. Validates fields and forwards the
+     * config through {@link #onConfirm}.
+     */
     private void onConfirm(ActionEvent e) {
         try {
             UIConfig cfg = readConfig();
@@ -94,6 +121,9 @@ public class UserInterface extends JFrame {
         }
     }
 
+    /**
+     * Handles the "Start" button and triggers the externally provided start action.
+     */
     private void onStart(ActionEvent e) {
         status.setText("Running (every 5 minutes)");
         startBtn.setEnabled(false);
@@ -101,6 +131,9 @@ public class UserInterface extends JFrame {
         this.onStart.run();
     }
 
+    /**
+     * Handles the "Stop" button and triggers the externally provided stop action.
+     */
     private void onStop(ActionEvent e) {
         status.setText("Stopped");
         startBtn.setEnabled(true);
@@ -108,6 +141,10 @@ public class UserInterface extends JFrame {
         this.onStop.run();
     }
 
+    /**
+     * Opens a new dialog window showing live console output.
+     * Uses {@link ConsolePanel} to attach stdout/stderr.
+     */
     private void onOpenLogViewer(ActionEvent e) {
         JDialog dlg = new JDialog(this, "Console Output", false);
         ConsolePanel console = new ConsolePanel();
@@ -118,6 +155,12 @@ public class UserInterface extends JFrame {
         dlg.setVisible(true);
     }
 
+    /**
+     * Reads and validates user-provided settings from the UI.
+     *
+     * @return a populated {@link UIConfig}
+     * @throws IllegalArgumentException if required fields are empty
+     */
     private UIConfig readConfig() {
         String userSrv = reqText(userServer, "User Server");
         String passSrv = new String(passServer.getPassword());
@@ -132,18 +175,50 @@ public class UserInterface extends JFrame {
         return new UIConfig(userSrv, passSrv, uDb, pDbPass, seedPhrase, first);
     }
 
+    /**
+     * Ensures a text field contains non-empty input.
+     *
+     * @throws IllegalArgumentException if the field is empty
+     */
     private static String reqText(JTextField field, String name) {
         String v = field.getText().trim();
         if (v.isEmpty()) throw new IllegalArgumentException(name + " must not be empty");
         return v;
     }
 
+    /**
+     * Adds a labeled input row to a {@link JPanel} using the given
+     * {@link GridBagConstraints}.
+     *
+     * <p>The row consists of a text label in the first column and the provided
+     * input component in the second column. The updated row index is returned
+     * to allow chaining in layout construction.</p>
+     *
+     * @param panel the panel to which the row is added
+     * @param g grid bag constraints used for placement
+     * @param row current row index
+     * @param label text label describing the input field
+     * @param input the input component to place next to the label
+     * @return the next row index
+     */
     private static int addRow(JPanel panel, GridBagConstraints g, int row, String label, JComponent input) {
         g.gridx = 0; g.gridy = row; g.weightx = 0; panel.add(new JLabel(label + ":"), g);
         g.gridx = 1; g.gridy = row; g.weightx = 1; panel.add(input, g);
         return row + 1;
     }
 
+    /**
+     * Adds a section heading label to the form layout.
+     *
+     * <p>The label spans two columns, appears in bold, and visually groups
+     * related input rows under a common section title.</p>
+     *
+     * @param panel the panel to which the section header is added
+     * @param g grid bag constraints used for placement
+     * @param row current row index
+     * @param text section title text
+     * @return the next row index
+     */
     private static int sectionLabel(JPanel panel, GridBagConstraints g, int row, String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
@@ -153,6 +228,16 @@ public class UserInterface extends JFrame {
         return row + 1;
     }
 
+    /**
+     * Creates a {@link JFormattedTextField} for entering date-time values
+     * in the format {@code yyyy-MM-dd HH:mm:ss}.
+     *
+     * <p>The returned field overrides {@link JFormattedTextField#getValue()}
+     * to ensure that the value is always resolved to a valid {@link Date},
+     * falling back to the current date on parsing errors.</p>
+     *
+     * @return a preconfigured date-time input field
+     */
     private static JFormattedTextField dateTimeField() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         JFormattedTextField field = new JFormattedTextField(sdf) {
@@ -172,6 +257,9 @@ public class UserInterface extends JFrame {
         return field;
     }
 
+    /**
+     * Container for configuration values read from the UI.
+     */
     public record UIConfig(
             String userServer, String passServer,
             String userDb, String passDb,
@@ -179,6 +267,7 @@ public class UserInterface extends JFrame {
             Date dateOfFirstExecution
     ) {
     }
+
     public void setStartEnabled(boolean enabled) { startBtn.setEnabled(enabled); }
     public void setOnStart(Runnable handler) { this.onStart = handler; }
     public void setOnConfirm(Consumer<UIConfig> handler) { this.onConfirm = handler; }

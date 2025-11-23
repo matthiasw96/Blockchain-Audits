@@ -18,6 +18,16 @@ import com.wavesplatform.transactions.account.PrivateKey;
 import com.wavesplatform.wavesj.Node;
 import org.hrw.datamodels.HashRecord;
 
+/**
+ * Service responsible for anchoring Merkle root hashes in the Waves blockchain.
+ *
+ * <p>The service creates and broadcasts {@link DataTransaction} entries containing
+ * the root hash and timestamp provided by {@link HashRecord}. Each hash entry is
+ * written to the blockchain as a {@link StringEntry} for later verification.</p>
+ *
+ * <p>This class is constructed through {@link AnchorServiceBuilder} to ensure
+ * proper configuration of private key, node connection and chain ID.</p>
+ */
 public class AnchorService {
     private final PrivateKey privateKey;
     private final byte networkChainId;
@@ -31,6 +41,11 @@ public class AnchorService {
         this.FORMATTER = builder.FORMATTER;
     }
 
+    /**
+     * Checks each entry if it contains a root hash and anchors matches to the Waves blockchain
+     *
+     * @param hashedData list of {@link HashRecord} objects containing hashes of server data
+     */
     public void anchorData(List<HashRecord> hashedData) {
         for(HashRecord hashEntry : hashedData) {
             if(!hashEntry.rootHash().isEmpty()) {
@@ -39,6 +54,14 @@ public class AnchorService {
         }
     }
 
+    /**
+     * Anchors a single Merkle root hash in the Waves blockchain.
+     *
+     * <p>The method prints progress information, creates a signed
+     * {@link DataTransaction}, and broadcasts it to the configured Waves node.</p>
+     *
+     * @param rootHash the hash record to anchor
+     */
     private void anchorHashTree(HashRecord rootHash) {
         try{
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Anchoring Data");
@@ -54,6 +77,12 @@ public class AnchorService {
         }
     }
 
+    /**
+     * Creates a signed Waves {@link DataTransaction} containing the given data entry.
+     *
+     * @param entry the data entry representing the root hash to be written
+     * @return signed {@link DataTransaction}
+     */
     private DataTransaction createTransaction(DataEntry entry) {
         return DataTransaction.
                 builder(Collections.singletonList(entry))
@@ -63,6 +92,12 @@ public class AnchorService {
                 .getSignedWith(privateKey);
     }
 
+    /**
+     * Builder for constructing {@link AnchorService} instances.
+     *
+     * <p>Allows configuration of private key, chain ID, Waves node connection
+     * and logging date format.</p>
+     */
     public static class AnchorServiceBuilder {
         PrivateKey privateKey;
         byte networkChainId;

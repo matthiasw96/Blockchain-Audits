@@ -17,8 +17,33 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Application entry point for the data collection and blockchain anchoring tool.
+ *
+ * <p>This class loads configuration files, initializes all core components
+ * (collector, hasher, database, blockchain anchor), and wires them together
+ * using the graphical {@link UserInterface}. User interactions through the UI
+ * trigger configuration, scheduling and execution of the processing workflow.</p>
+ *
+ * <p>The setup process is executed on a background thread to keep the UI responsive.
+ * Once initialization is complete, the scheduler and database API are activated
+ * and the UI enables start/stop controls.</p>
+ */
 public class Main {
 
+    /**
+     * Starts the application by:
+     * <ol>
+     *     <li>loading configuration values from {@code config.properties}</li>
+     *     <li>initializing the user interface</li>
+     *     <li>creating system components on confirmation (collector, hasher,
+     *         database handler, scheduler, blockchain anchor)</li>
+     *     <li>starting the embedded database API</li>
+     *     <li>enabling scheduling controls in the UI</li>
+     * </ol>
+     *
+     * @param args command line arguments (unused)
+     */
     public static void main(String[] args) {
         DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
@@ -77,7 +102,7 @@ public class Main {
                             config.jobInterval()
                     );
 
-                    DatabaseAPI databaseAPI = new DatabaseAPI.DatabaseAPIbuilder()
+                    DatabaseAPI databaseAPI = new DatabaseAPI.DatabaseAPIBuilder()
                             .setDbHandler(dbHandler)
                             .setInterval(config.hashIntervalMinutes())
                             .setServer(config.databaseApiPort())

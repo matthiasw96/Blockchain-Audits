@@ -26,6 +26,19 @@ public class DatabaseHandler {
         this.converter = builder.converter;
     }
 
+    /**
+     * Reads server data from the given table between the specified
+     * timestamp range.
+     *
+     * <p>Timestamps are expected to be epoch seconds. The result set is converted
+     * into {@link ServerRecord} objects via the configured {@link Converter}.</p>
+     *
+     * @param startPoint lower bound (inclusive) as epoch seconds
+     * @param endPoint   upper bound (inclusive) as epoch seconds
+     * @param tableName  database table name to query (e.g. {@code "serverdata"})
+     * @return list of matching {@link ServerRecord} entries
+     * @throws SQLException if the query or connection fails
+     */
     public List<ServerRecord> readFromDatabase(long startPoint, long endPoint, String tableName) throws SQLException {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Reading from database");
 
@@ -38,6 +51,19 @@ public class DatabaseHandler {
         return records;
     }
 
+    /**
+     * Writes a list of data records to the specified table.
+     *
+     * <p>The {@link Datastructure} elements are converted to column lists and
+     * value tuples.</p>
+     *
+     * <p>Conflicts on the {@code timestamp} column are ignored
+     * using {@code ON CONFLICT (timestamp) DO NOTHING}.</p>
+     *
+     * @param data      list of records to write
+     * @param tableName target table name
+     * @throws SQLException if the insert or connection fails
+     */
     public void writeToDatabase(List<? extends Datastructure> data, String tableName) throws SQLException {
         try {
             System.out.println(LocalDateTime.now().format(FORMATTER) + ": Connecting to database");
@@ -53,12 +79,28 @@ public class DatabaseHandler {
         }
     }
 
+    /**
+     * Creates a new JDBC {@link Statement} using the configured PostgreSQL connection parameters.
+     *
+     * @return an open {@link Statement} for executing SQL queries
+     * @throws SQLException if the connection cannot be established
+     */
     private Statement createStatement() throws SQLException {
         String url = "jdbc:postgresql://" + hostAddress + ":"+port+"/postgres";
         Connection connection = DriverManager.getConnection(url, username, password);
         return connection.createStatement();
     }
 
+    /**
+     * Builds an {@code INSERT} SQL statement for the given data list and table.
+     *
+     * <p>Conflicts on the {@code timestamp} column are ignored
+     * using {@code ON CONFLICT (timestamp) DO NOTHING} to prevent overwriting of entries.</p>
+     *
+     * @param data      list of data records
+     * @param tableName target table name
+     * @return SQL insert statement string
+     */
     private String createInsertQuery(List<? extends Datastructure> data, String tableName) {
         String columnNames = data.getFirst().getAttributeNames();
         String values = "";
@@ -77,6 +119,14 @@ public class DatabaseHandler {
                 ON CONFLICT (timestamp) DO NOTHING;""";
     }
 
+    /**
+     * Builds a {@code SELECT} SQL statement for fetching records between two timestamps.
+     *
+     * @param startPoint lower bound (inclusive) as epoch seconds
+     * @param endPoint   upper bound (inclusive) as epoch seconds
+     * @param tableName  table to query
+     * @return SQL select statement string
+     */
     private String createSelectQuery(long startPoint, long endPoint, String tableName){
         return """
                 SELECT * FROM\s""" + tableName + """
@@ -85,6 +135,12 @@ public class DatabaseHandler {
                 """;
     }
 
+    /**
+     * Builder for {@link DatabaseHandler} instances.
+     *
+     * <p>Allows configuration of database connection details and the
+     * {@link Converter} used to map SQL results to domain models.</p>
+     */
     public static class DatabaseHandlerBuilder {
         String hostAddress;
         String username;
