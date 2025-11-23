@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"org.hrw"},{"l":"org.hrw.application"},{"l":"org.hrw.infrastructure.anchor"},{"l":"org.hrw.infrastructure.collector"},{"l":"org.hrw.infrastructure.database"},{"l":"org.hrw.userInterface"}];updateSearchResults();

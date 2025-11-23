@@ -1,0 +1,6 @@
+org.hrw
+org.hrw.application
+org.hrw.infrastructure.anchor
+org.hrw.infrastructure.collector
+org.hrw.infrastructure.database
+org.hrw.userInterface
