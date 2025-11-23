@@ -23,11 +23,12 @@ public class Main {
 
         Converter converter = new Converter(config.mappingPath());
 
-        DataCollector collector = new DataCollector(
-                config.auditToolIp(),
-                converter,
-                FORMATTER
-        );
+        DataCollector collector = new DataCollector.DataCollectorBuilder()
+                .setUri(config.collectorServerIp())
+                .setPort(config.databaseApiPort())
+                .setConverter(converter)
+                .setFormatter(FORMATTER)
+                .build();
 
         BlockchainHandler blockchainHandler = new BlockchainHandler(
                 config.blockchainUrl(),

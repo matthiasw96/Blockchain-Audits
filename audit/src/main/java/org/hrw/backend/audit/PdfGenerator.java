@@ -73,10 +73,9 @@ public class PdfGenerator {
         return formatUnixSeconds(unixTimestamp);
     }
 
-    //TODO: Titel anpassen
     private float createTitle(float y, PDPageContentStream cs) throws IOException {
         cs.setFont(PDType1Font.HELVETICA_BOLD, 18);
-        y = writeLine(cs, "Audit Report – Telemetriedaten", margin, y, leading);
+        y = writeLine(cs, "Audit Report – Systemmetriken", margin, y, leading);
 
         cs.setFont(PDType1Font.HELVETICA, 11);
         y -= leading;
@@ -101,7 +100,6 @@ public class PdfGenerator {
         return y;
     }
 
-    //TODO: Kontext anpassen
     private float createAuditContext(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
         y = writeLine(cs, "2. Audit-Kontext", margin, y, leading);
         y = writeLine(cs, "Datenquelle: " + summary.dataSource(), margin + 20, y, leading);
@@ -116,7 +114,6 @@ public class PdfGenerator {
         return y;
     }
 
-    //TODO: Integritätsergebnisse anpassen
     private float createIntegrityResults(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
         y = writeLine(cs, "3. Integritätsprüfung", margin, y, leading);
 
@@ -130,7 +127,6 @@ public class PdfGenerator {
         return y;
     }
 
-    //TODO: Zusammenfassung anpassen
     private float createSummary(float y, PDPageContentStream cs, AuditSummary summary) throws IOException {
         y = writeLine(cs, "4. Zusammenfassung", margin, y, leading);
 

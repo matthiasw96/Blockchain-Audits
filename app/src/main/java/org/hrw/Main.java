@@ -77,6 +77,7 @@ public class Main {
                     DatabaseAPI databaseAPI = new DatabaseAPI(
                             config.databaseApiPort(),
                             dbHandler,
+                            config.hashIntervalMinutes(),
                             FORMATTER);
 
                     databaseAPI.start();

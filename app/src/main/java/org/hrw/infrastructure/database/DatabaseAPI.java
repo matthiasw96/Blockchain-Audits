@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -19,16 +20,18 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 public class DatabaseAPI implements AutoCloseable {
-    private HttpServer server;
-    private DatabaseHandler db;
-    private Gson gson;
-    private ZoneId zoneId;
+    private final HttpServer server;
+    private final DatabaseHandler db;
+    private final Gson gson;
+    private final ZoneId zoneId;
     private final DateTimeFormatter FORMATTER;
+    private final int interval;
 
-    public DatabaseAPI(int port, DatabaseHandler db, DateTimeFormatter FORMATTER) throws IOException {
+    public DatabaseAPI(int port, DatabaseHandler db, int interval, DateTimeFormatter FORMATTER) throws IOException {
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newSingleThreadExecutor());
         this.db = db;
+        this.interval = interval;
         this.gson = new Gson();
         this.zoneId = ZoneId.of("Europe/Berlin");
         this.FORMATTER = FORMATTER;
@@ -69,31 +72,41 @@ public class DatabaseAPI implements AutoCloseable {
         }
     }
 
-    //TODO: Anpassung Intervall
     private ZonedDateTime calculateStart(String start) {
         ZonedDateTime startDate = parseDate(start);
-        int minute = startDate.getMinute();
-        int minutesToSubtract = (minute >= 30) ? (minute - 30) : minute;
-        return startDate.minusMinutes(minutesToSubtract).withSecond(0);
+
+        long minutesSinceEpoch = startDate.toEpochSecond() / 60;
+        long floored = (minutesSinceEpoch / interval) * interval;
+
+        return Instant.ofEpochSecond(floored * 60)
+                .atZone(zoneId)
+                .withSecond(0)
+                .withNano(0);
     }
 
-    //TODO: Anpassung Intervall
     private ZonedDateTime calculateEnd(String end) {
         ZonedDateTime endDate = parseDate(end);
-        int minute = endDate.getMinute();
-        int minutesToAdd = (minute < 30) ? (30-minute) : (60-minute);
-        return endDate.plusMinutes(minutesToAdd).withSecond(0);
+
+        long minutesSinceEpoch = endDate.toEpochSecond() / 60;
+        long ceiled = ((minutesSinceEpoch + interval - 1) / interval) * interval;
+
+        return Instant.ofEpochSecond(ceiled * 60)
+                .atZone(zoneId)
+                .withSecond(0)
+                .withNano(0);
     }
 
     private ZonedDateTime parseDate(String date) {
-        return  LocalDateTime.parse(date).atZone(zoneId).truncatedTo(ChronoUnit.MINUTES);
+        return LocalDateTime.parse(date)
+                .atZone(zoneId)
+                .truncatedTo(ChronoUnit.MINUTES);
     }
+
 
     private String jsonData(List<ServerRecord> data) {
         return gson.toJson(new DataResponse(data.size(), data));
     }
 
-    //TODO: Code und Nachricht immer gleich...
     private String jsonError(String code, String msg) {
         return gson.toJson(new ErrorResponse(code, msg));
     }

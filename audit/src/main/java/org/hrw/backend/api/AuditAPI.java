@@ -141,7 +141,7 @@ public class AuditAPI implements AutoCloseable {
         return new AuditSummary(
                 java.util.UUID.randomUUID().toString(),
                 "1.0.0",
-                "Telemetry-Server-01",
+                dataCollector.getUri(),
                 "Zeitraum: " + startDate + " - " + endDate,
                 data.size(),
                 isVerified

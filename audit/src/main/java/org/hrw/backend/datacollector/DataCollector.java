@@ -13,19 +13,19 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-//TODO: Port datenbank
 public class DataCollector {
     private final HttpClient client;
     private final String uri;
     private final Converter converter;
     private final DateTimeFormatter FORMATTER;
+    private final int port;
 
-    //TODO: Port datenbank
-    public DataCollector(String uri, Converter converter, DateTimeFormatter FORMATTER) {
+    public DataCollector(DataCollectorBuilder builder) {
         this.client = HttpClient.newHttpClient();
-        this.uri = uri;
-        this.converter = converter;
-        this.FORMATTER = FORMATTER;
+        this.uri = builder.uri;
+        this.converter = builder.converter;
+        this.FORMATTER = builder.FORMATTER;
+        this.port = builder.port;
     }
 
     public List<ServerRecord> getServerData(ZonedDateTime start, ZonedDateTime end) throws IOException, InterruptedException {
@@ -44,14 +44,44 @@ public class DataCollector {
         return response.body();
     }
 
-    //TODO: Port Datenbank
     private HttpRequest createRequest(ZonedDateTime start, ZonedDateTime end) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-        String url = "http://"+uri+":8080/selectData?startDate="+start.format(formatter)+"&endDate="+end.format(formatter);
+        String url = "http://"+uri+":"+port+"/selectData?startDate="+start.format(formatter)+"&endDate="+end.format(formatter);
         System.out.println(url);
         return HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .GET()
                 .build();
+    }
+
+    public String getUri() { return uri; }
+
+    public static class DataCollectorBuilder {
+        private String uri;
+        private Converter converter;
+        private DateTimeFormatter FORMATTER;
+        private int port;
+
+        public DataCollectorBuilder setUri(String uri) {
+            this.uri = uri;
+            return this;
+        }
+
+        public DataCollectorBuilder setConverter(Converter converter) {
+            this.converter = converter;
+            return this;
+        }
+
+        public DataCollectorBuilder setFormatter(DateTimeFormatter formatter) {
+            this.FORMATTER = formatter;
+            return this;
+        }
+
+        public DataCollectorBuilder setPort(int port) {
+            this.port = port;
+            return this;
+        }
+
+        public DataCollector build() { return new DataCollector(this); }
     }
 }
