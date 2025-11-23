@@ -14,6 +14,25 @@ import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Entry point for the Audit Webservice.
+ *
+ * <p>This class initializes all required components of the audit backend,
+ * including:</p>
+ *
+ * <ul>
+ *     <li>Configuration loading from {@code config.properties}</li>
+ *     <li>Converter for mapping raw data into domain objects</li>
+ *     <li>Data collector for querying the DatabaseAPI</li>
+ *     <li>Blockchain handler for retrieving anchored root hashes</li>
+ *     <li>Hasher for local reconstruction of Merkle-based hashes</li>
+ *     <li>Verifier for comparing server hashes with blockchain hashes</li>
+ *     <li>AuditAPI (HTTP API + Web-GUI backend)</li>
+ * </ul>
+ *
+ * <p>Once all components are configured, the HTTP server for the
+ * AuditAPI is started on port 8000.</p>
+ */
 public class Main {
     public static void main(String[] args) throws IOException {
         DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")

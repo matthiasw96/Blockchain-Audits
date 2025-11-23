@@ -21,6 +21,26 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * HTTP API for the audit backend.
+ *
+ * <p>This API exposes endpoints for:</p>
+ * <ul>
+ *     <li>Serving the single-page frontend (static resources)</li>
+ *     <li>Selecting data for a given time interval</li>
+ *     <li>Triggering integrity verification against the blockchain</li>
+ *     <li>Downloading filtered data as CSV</li>
+ *     <li>Downloading a generated audit report as PDF</li>
+ * </ul>
+ *
+ * <p>It combines several core components:</p>
+ * <ul>
+ *     <li>{@link DataCollector} – retrieves telemetry data from the DatabaseAPI</li>
+ *     <li>{@link Verifier} – compares recomputed hashes with blockchain hashes</li>
+ *     <li>{@link Converter} – converts internal data structures to CSV</li>
+ *     <li>{@link PdfGenerator} – creates PDF-based audit reports</li>
+ * </ul>
+ */
 public class AuditAPI implements AutoCloseable {
     private final DataCollector dataCollector;
     private final Verifier verifier;
@@ -43,9 +63,12 @@ public class AuditAPI implements AutoCloseable {
         this.gson = new Gson();
         this.pdfCreator = new PdfGenerator(FORMATTER);
         createContexts();
-        System.out.println("Server started at localhost:8000");
+        System.out.println("Server started at localhost:8000/index.html");
     }
 
+    /**
+     * Registers all HTTP contexts (routes) for the audit API.
+     */
     private void createContexts() {
         server.createContext("/", this::handleStatic);
         server.createContext("/selectData", this::handleSelectData);
@@ -54,6 +77,12 @@ public class AuditAPI implements AutoCloseable {
         server.createContext("/downloadReport", this::handleDownloadReport);
     }
 
+    /**
+     * Serves static frontend resources (HTML, CSS, JS) from the classpath.
+     *
+     * <p>The requested path is resolved relative to the classpath, and the
+     * appropriate {@code Content-Type} is set based on file extension.</p>
+     */
     private void handleStatic(HttpExchange httpExchange) throws IOException {
         String resourceName = httpExchange.getRequestURI().getPath().substring(1);
 
@@ -68,6 +97,23 @@ public class AuditAPI implements AutoCloseable {
         httpExchange.close();
     }
 
+    /**
+     * Handles the {@code /selectData} endpoint.
+     *
+     * <p>Expected query parameters:</p>
+     * <ul>
+     *     <li>{@code start} – ISO-formatted timestamp</li>
+     *     <li>{@code end} – ISO-formatted timestamp</li>
+     * </ul>
+     *
+     * <p>The method:</p>
+     * <ol>
+     *     <li>parses the time range</li>
+     *     <li>fetches data via {@link DataCollector}</li>
+     *     <li>stores it in memory for subsequent operations (verify, download)</li>
+     *     <li>returns a simple JSON status response</li>
+     * </ol>
+     */
     private void handleSelectData(HttpExchange httpExchange) throws IOException {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Selecting Data");
 
@@ -94,6 +140,13 @@ public class AuditAPI implements AutoCloseable {
         }
     }
 
+    /**
+     * Handles the {@code /verifyData} endpoint.
+     *
+     * <p>Uses the previously selected data (from {@link #handleSelectData}) and
+     * executes {@link Verifier#verify(List)}. The result ({@code true}/{@code false})
+     * is returned as a JSON response.</p>
+     */
     private void handleVerifyData(HttpExchange httpExchange) throws IOException {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Verifying data");
 
@@ -104,6 +157,13 @@ public class AuditAPI implements AutoCloseable {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Verification completed");
     }
 
+    /**
+     * Handles the {@code /downloadData} endpoint.
+     *
+     * <p>Filters the currently loaded data to the selected time range and
+     * returns it as a CSV file (semicolon-separated) using the shared
+     * {@link Converter}.</p>
+     */
     private void handleDownloadData(HttpExchange httpExchange) throws IOException {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Downloading data");
 
@@ -114,6 +174,15 @@ public class AuditAPI implements AutoCloseable {
 
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Download completed");
     }
+
+
+    /**
+     * Handles the {@code /downloadReport} endpoint.
+     *
+     * <p>Filters the currently loaded data, builds an {@link AuditSummary} and
+     * generates a PDF report using {@link PdfGenerator}. The PDF is sent as a
+     * download attachment.</p>
+     */
 
     private void handleDownloadReport(HttpExchange httpExchange) throws IOException {
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Downloading report");
@@ -126,6 +195,10 @@ public class AuditAPI implements AutoCloseable {
 
         System.out.println(LocalDateTime.now().format(FORMATTER) + ": Download completed");
     }
+
+    /**
+     * Simple content type detection based on file extension for static resources.
+     */
     private String guessContentType(String resourceName) {
         if (resourceName.endsWith(".html")) return "text/html; charset=utf-8";
         if (resourceName.endsWith(".css"))  return "text/css; charset=utf-8";
@@ -133,6 +206,9 @@ public class AuditAPI implements AutoCloseable {
         return "application/octet-stream";
     }
 
+    /**
+     * Builds an {@link AuditSummary} based on the current selection and verification result.
+     */
     private AuditSummary createSummary() {
         return new AuditSummary(
                 java.util.UUID.randomUUID().toString(),
@@ -144,6 +220,11 @@ public class AuditAPI implements AutoCloseable {
         );
     }
 
+    /**
+     * Filters the internally stored data to match the selected time range.
+     *
+     * @return list of records whose timestamps lie between {@code startDate} and {@code endDate}
+     */
     private List<ServerRecord> filterData() {
         long from = startDate.toEpochSecond();
         long to = endDate.toEpochSecond();
@@ -156,6 +237,9 @@ public class AuditAPI implements AutoCloseable {
                         .toList();
     }
 
+    /**
+     * Sends a generic HTTP response with configurable content type and status code.
+     */
     private void respond(HttpExchange ex, String contentType, int status, byte[] bytes) throws IOException {
         ex.getResponseHeaders().set("Content-Type", contentType);
         ex.sendResponseHeaders(status, bytes.length);
@@ -164,6 +248,9 @@ public class AuditAPI implements AutoCloseable {
         }
     }
 
+    /**
+     * Sends the PDF report as a downloadable file response.
+     */
     private void respond(HttpExchange ex, byte[] bytes) throws IOException {
         ex.getResponseHeaders().set("Content-Type", "application/pdf");
         ex.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"audit-report.pdf\"");
@@ -182,12 +269,24 @@ public class AuditAPI implements AutoCloseable {
         server.stop(0);
     }
 
+    /**
+     * Creates a small JSON status/message object and returns it as UTF-8 bytes.
+     *
+     * @param code status code (e.g. {@code "OK"}, {@code "ERROR"})
+     * @param msg human-readable message
+     * @return UTF-8 encoded JSON response
+     */
     private byte[] jsonResponse(String code, String msg) {
         return gson.toJson(new JsonResponse(code, msg)).getBytes(StandardCharsets.UTF_8);
     }
 
     private record JsonResponse(String status, String message) {}
 
+    /**
+     * Builder for {@link AuditAPI} instances.
+     *
+     * <p>Allows configuring data collector, verifier, converter and formatting.</p>
+     */
     public static class AuditAPIBuilder {
         private DataCollector dataCollector;
         private Verifier verifier;
